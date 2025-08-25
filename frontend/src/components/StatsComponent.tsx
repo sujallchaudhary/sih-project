@@ -2,120 +2,220 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ProblemStatement } from '@/types/problem-statement';
-import { FileText, Cpu, Wrench, Building } from 'lucide-react';
+import { 
+  Trophy, 
+  Users, 
+  Building2, 
+  Layers3,
+  TrendingUp,
+  Clock,
+  Target,
+  Zap
+} from 'lucide-react';
 
 interface StatsComponentProps {
   problemStatements: ProblemStatement[];
   filteredCount: number;
 }
 
-export const StatsComponent: React.FC<StatsComponentProps> = ({
-  problemStatements,
-  filteredCount,
-}) => {
-  const totalProblems = problemStatements.length;
-  const softwareCount = problemStatements.filter(ps => ps.category === 'Software').length;
-  const hardwareCount = problemStatements.filter(ps => ps.category === 'Hardware').length;
-  const organizationsCount = new Set(problemStatements.map(ps => ps.organization)).size;
+export function StatsComponent({ problemStatements, filteredCount }: StatsComponentProps) {
+  // Calculate stats
+  const totalProblemStatements = problemStatements.length;
+  const uniqueOrganizations = new Set(problemStatements.map(ps => ps.organization)).size;
+  const uniqueThemes = new Set(problemStatements.map(ps => ps.theme)).size;
+  const uniqueCategories = new Set(problemStatements.map(ps => ps.category)).size;
 
   const stats = [
     {
-      title: 'Total Problems',
-      value: filteredCount,
-      total: totalProblems,
-      icon: FileText,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      textColor: 'text-blue-700',
+      label: "Total Challenges",
+      value: totalProblemStatements,
+      icon: Trophy,
+      color: "from-blue-500 to-cyan-500",
+      bgColor: "bg-blue-500/10",
+      description: "Active problem statements"
     },
     {
-      title: 'Software',
-      value: problemStatements.filter(ps => ps.category === 'Software').length,
-      total: softwareCount,
-      icon: Cpu,
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
-      textColor: 'text-green-700',
+      label: "Organizations",
+      value: uniqueOrganizations,
+      icon: Building2,
+      color: "from-purple-500 to-pink-500",
+      bgColor: "bg-purple-500/10",
+      description: "Government & private entities"
     },
     {
-      title: 'Hardware',
-      value: problemStatements.filter(ps => ps.category === 'Hardware').length,
-      total: hardwareCount,
-      icon: Wrench,
-      color: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-orange-50',
-      textColor: 'text-orange-700',
+      label: "Themes",
+      value: uniqueThemes,
+      icon: Layers3,
+      color: "from-green-500 to-emerald-500",
+      bgColor: "bg-green-500/10",
+      description: "Problem domains"
     },
     {
-      title: 'Organizations',
-      value: organizationsCount,
-      total: organizationsCount,
-      icon: Building,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      textColor: 'text-purple-700',
-    },
+      label: "Categories",
+      value: uniqueCategories,
+      icon: Target,
+      color: "from-orange-500 to-red-500",
+      bgColor: "bg-orange-500/10",
+      description: "Challenge types"
+    }
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      {stats.map((stat, index) => (
-        <motion.div
-          key={stat.title}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.1 }}
-        >
-          <Card className="relative overflow-hidden bg-white shadow-lg hover:shadow-xl transition-all duration-300 border-0">
-            <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${stat.color}`}></div>
-            
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                  <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
+    <motion.div 
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.2 }}
+      className="mb-16"
+    >
+      {/* Main Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          
+          return (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ 
+                duration: 0.5, 
+                delay: index * 0.1 + 0.3,
+                type: "spring",
+                stiffness: 100
+              }}
+              whileHover={{ 
+                scale: 1.05,
+                transition: { duration: 0.2 }
+              }}
+              className="relative group"
+            >
+              {/* Background glow effect */}
+              <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-0 group-hover:opacity-20 rounded-2xl blur-xl transition-opacity duration-500`} />
+              
+              <div className={`relative bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-6 transition-all duration-300 group-hover:border-border shadow-lg hover:shadow-xl ${stat.bgColor}`}>
+                {/* Icon */}
+                <div className="flex items-center justify-between mb-4">
+                  <motion.div
+                    whileHover={{ rotate: 360 }}
+                    transition={{ duration: 0.6 }}
+                    className={`p-3 rounded-xl bg-gradient-to-r ${stat.color} shadow-lg`}
+                  >
+                    <Icon className="w-6 h-6 text-white" />
+                  </motion.div>
+                  
+                  <motion.div
+                    animate={{ 
+                      scale: [1, 1.1, 1],
+                      opacity: [0.5, 1, 0.5]
+                    }}
+                    transition={{ 
+                      duration: 2, 
+                      repeat: Infinity,
+                      delay: index * 0.2
+                    }}
+                    className="w-2 h-2 bg-green-500 rounded-full"
+                  />
                 </div>
-                
-                <motion.div
+
+                {/* Value */}
+                <motion.div 
+                  className="mb-2"
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 + 0.2 }}
-                  className="text-right"
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: index * 0.1 + 0.5,
+                    type: "spring",
+                    stiffness: 200
+                  }}
                 >
-                  <div className={`text-3xl font-bold ${stat.textColor}`}>
-                    {stat.value}
-                  </div>
-                  {stat.value !== stat.total && (
-                    <Badge variant="outline" className="text-xs mt-1">
-                      of {stat.total}
-                    </Badge>
-                  )}
+                  <span className={`text-4xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                    {stat.value.toLocaleString()}
+                  </span>
                 </motion.div>
+
+                {/* Label */}
+                <h3 className="font-semibold text-foreground mb-1 group-hover:text-foreground/90 transition-colors">
+                  {stat.label}
+                </h3>
+                
+                {/* Description */}
+                <p className="text-sm text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
+                  {stat.description}
+                </p>
+
+                {/* Animated border */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${stat.color} opacity-20 animate-pulse`} />
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Filtered Results Indicator */}
+      {filteredCount !== totalProblemStatements && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
+          className="flex items-center justify-center"
+        >
+          <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl px-6 py-4 backdrop-blur-sm">
+            <div className="flex items-center space-x-3">
+              <motion.div
+                animate={{ rotate: [0, 360] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              >
+                <TrendingUp className="w-5 h-5 text-amber-600" />
+              </motion.div>
+              
+              <div className="text-center">
+                <div className="flex items-center space-x-2">
+                  <span className="text-lg font-bold text-amber-700 dark:text-amber-400">
+                    {filteredCount}
+                  </span>
+                  <span className="text-sm text-muted-foreground">of</span>
+                  <span className="text-lg font-bold text-muted-foreground">
+                    {totalProblemStatements}
+                  </span>
+                  <span className="text-sm text-muted-foreground">challenges shown</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Results filtered based on your criteria
+                </p>
               </div>
               
-              <h3 className="text-sm font-medium text-gray-600">
-                {stat.title}
-              </h3>
-              
-              {/* Progress bar for filtered results */}
-              {stat.value !== stat.total && stat.total > 0 && (
-                <div className="mt-3">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(stat.value / stat.total) * 100}%` }}
-                      transition={{ duration: 1, delay: index * 0.1 + 0.5 }}
-                      className={`h-2 rounded-full bg-gradient-to-r ${stat.color}`}
-                    ></motion.div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <Zap className="w-5 h-5 text-amber-600" />
+              </motion.div>
+            </div>
+          </div>
         </motion.div>
-      ))}
-    </div>
+      )}
+
+      {/* Real-time indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 1 }}
+        className="flex items-center justify-center mt-6"
+      >
+        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+          <motion.div
+            animate={{ scale: [1, 1.5, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="w-2 h-2 bg-green-500 rounded-full"
+          />
+          <Clock className="w-3 h-3" />
+          <span>Real-time data • Updated continuously</span>
+        </div>
+      </motion.div>
+    </motion.div>
   );
-};
+}

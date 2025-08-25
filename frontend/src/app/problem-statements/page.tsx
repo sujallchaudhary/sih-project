@@ -2,19 +2,31 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { problemStatementApi } from '@/lib/api';
+import { problemStatementApi, PaginatedResponse } from '@/lib/api';
 import { ProblemStatement, FilterOptions } from '@/types/problem-statement';
 import { ProblemStatementCard } from '@/components/ProblemStatementCard';
 import { FilterComponent } from '@/components/FilterComponent';
 import { StatsComponent } from '@/components/StatsComponent';
+import { AnimatedPagination } from '@/components/AnimatedPagination';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, RefreshCw, Sparkles, Zap } from 'lucide-react';
+import { 
+  Loader2, 
+  RefreshCw, 
+  Sparkles, 
+  Zap, 
+  Rocket,
+  Stars,
+  Globe,
+  Activity
+} from 'lucide-react';
 
 export default function ProblemStatementsPage() {
   const [problemStatements, setProblemStatements] = useState<ProblemStatement[]>([]);
+  const [allProblemStatements, setAllProblemStatements] = useState<ProblemStatement[]>([]);
   const [filters, setFilters] = useState<FilterOptions | null>(null);
   const [loading, setLoading] = useState(true);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   // Filter states
@@ -26,30 +38,35 @@ export default function ProblemStatementsPage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
 
+  // Fetch initial data and filters
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        const [problemStatementsResponse, filtersResponse] = await Promise.all([
-          problemStatementApi.getAllProblemStatements(),
+        const [filtersResponse] = await Promise.all([
           problemStatementApi.getFilterOptions(),
         ]);
-
-        if (problemStatementsResponse.success) {
-          setProblemStatements(problemStatementsResponse.data);
-        } else {
-          setError('Failed to fetch problem statements');
-        }
 
         if (filtersResponse.success) {
           setFilters(filtersResponse.data);
         } else {
           setError('Failed to fetch filter options');
         }
+
+        // Fetch all data to calculate total stats
+        const allDataResponse = await problemStatementApi.getAllProblemStatements(1, 1000);
+        if (allDataResponse.success) {
+          setAllProblemStatements(allDataResponse.data);
+        }
+
+        // Fetch first page
+        await fetchProblemStatements(1);
       } catch (err) {
         setError('An error occurred while fetching data');
         console.error('Error fetching data:', err);
@@ -58,30 +75,50 @@ export default function ProblemStatementsPage() {
       }
     };
 
-    fetchData();
+    fetchInitialData();
   }, []);
 
-  // Filter logic
-  const filteredProblemStatements = useMemo(() => {
-    return problemStatements.filter((ps) => {
-      const matchesCategory = selectedCategory === 'all' || ps.category === selectedCategory;
-      const matchesTheme = selectedTheme === 'all' || ps.theme === selectedTheme;
-      const matchesOrganization = selectedOrganization === 'all' || ps.organization === selectedOrganization;
-      const matchesDepartment = selectedDepartment === 'all' || ps.department === selectedDepartment;
-      const matchesSearch = searchQuery === '' || 
-        ps.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ps.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ps.organization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ps.theme.toLowerCase().includes(searchQuery.toLowerCase());
+  // Fetch problem statements with pagination and filters
+  const fetchProblemStatements = async (page: number = currentPage) => {
+    try {
+      setPaginationLoading(true);
+      setError(null);
 
-      return matchesCategory && matchesTheme && matchesOrganization && matchesDepartment && matchesSearch;
-    });
-  }, [problemStatements, selectedCategory, selectedTheme, selectedOrganization, selectedDepartment, searchQuery]);
+      const response = await problemStatementApi.searchProblemStatements(
+        searchQuery,
+        {
+          category: selectedCategory,
+          theme: selectedTheme,
+          organization: selectedOrganization,
+          department: selectedDepartment,
+        },
+        page,
+        itemsPerPage
+      );
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredProblemStatements.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredProblemStatements.slice(startIndex, startIndex + itemsPerPage);
+      if (response.success) {
+        setProblemStatements(response.data);
+        setTotalPages(response.pagination?.totalPages || 1);
+        setTotalItems(response.pagination?.total || response.data.length);
+        setCurrentPage(page);
+      } else {
+        setError('Failed to fetch problem statements');
+      }
+    } catch (err) {
+      setError('An error occurred while fetching problem statements');
+      console.error('Error fetching problem statements:', err);
+    } finally {
+      setPaginationLoading(false);
+    }
+  };
+
+  // Effect for filter changes
+  useEffect(() => {
+    if (!loading) {
+      setCurrentPage(1);
+      fetchProblemStatements(1);
+    }
+  }, [selectedCategory, selectedTheme, selectedOrganization, selectedDepartment, searchQuery]);
 
   const clearFilters = () => {
     setSelectedCategory('all');
@@ -93,34 +130,66 @@ export default function ProblemStatementsPage() {
   };
 
   const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      const response = await problemStatementApi.getAllProblemStatements();
-      if (response.success) {
-        setProblemStatements(response.data);
-        setError(null);
-      }
-    } catch (err) {
-      setError('Failed to refresh data');
-    } finally {
-      setLoading(false);
-    }
+    await fetchProblemStatements(currentPage);
+  };
+
+  const handlePageChange = (page: number) => {
+    fetchProblemStatements(page);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[60vh]">
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="text-center"
+              className="text-center space-y-6"
             >
-              <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-700 mb-2">Loading Problem Statements</h2>
-              <p className="text-gray-500">Fetching the latest challenges for you...</p>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-20 h-20 mx-auto relative"
+              >
+                <div className="w-20 h-20 border-4 border-primary/20 rounded-full"></div>
+                <div className="absolute top-0 left-0 w-20 h-20 border-4 border-transparent border-t-primary rounded-full"></div>
+              </motion.div>
+              
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Loading Problem Statements
+                </h2>
+                <p className="text-muted-foreground">Fetching the latest challenges for you...</p>
+              </div>
+              
+              <motion.div
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="flex justify-center space-x-2"
+              >
+                {[...Array(3)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      backgroundColor: [
+                        "rgb(59, 130, 246)",
+                        "rgb(139, 92, 246)", 
+                        "rgb(236, 72, 153)",
+                        "rgb(59, 130, 246)"
+                      ]
+                    }}
+                    transition={{ 
+                      duration: 1.5, 
+                      repeat: Infinity,
+                      delay: i * 0.2 
+                    }}
+                    className="w-3 h-3 rounded-full bg-blue-500"
+                  />
+                ))}
+              </motion.div>
             </motion.div>
           </div>
         </div>
@@ -130,18 +199,22 @@ export default function ProblemStatementsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[60vh]">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center max-w-md"
+              className="text-center max-w-md space-y-6"
             >
-              <Alert className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
+              <div className="text-6xl mb-4">😞</div>
+              <Alert className="border-destructive/50 bg-destructive/5">
+                <AlertDescription className="text-center">{error}</AlertDescription>
               </Alert>
-              <Button onClick={handleRefresh} className="mt-4">
+              <Button 
+                onClick={handleRefresh} 
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Try Again
               </Button>
@@ -153,41 +226,106 @@ export default function ProblemStatementsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          animate={{ 
+            rotate: [0, 360],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ 
+            rotate: [360, 0],
+            scale: [1, 1.2, 1]
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-pink-500/5 to-cyan-500/5 rounded-full blur-3xl"
+        />
+      </div>
+
+      <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
         >
-          <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-6">
-            <Zap className="w-8 h-8 text-white" />
-          </div>
+          <motion.div 
+            className="inline-flex items-center justify-center p-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl mb-8 shadow-2xl shadow-purple-500/25"
+            whileHover={{ scale: 1.05, rotate: 5 }}
+            animate={{ 
+              boxShadow: [
+                "0 0 20px rgba(139, 92, 246, 0.3)",
+                "0 0 40px rgba(59, 130, 246, 0.4)",
+                "0 0 20px rgba(236, 72, 153, 0.3)",
+                "0 0 20px rgba(139, 92, 246, 0.3)",
+              ]
+            }}
+            transition={{ 
+              boxShadow: { duration: 3, repeat: Infinity },
+              hover: { duration: 0.3 }
+            }}
+          >
+            <Rocket className="w-10 h-10 text-white" />
+          </motion.div>
           
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-            SIH Problem Statements
-          </h1>
-          
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Discover innovative challenges from Smart India Hackathon. Find the perfect problem statement 
-            that matches your skills and passion for creating impactful solutions.
-          </p>
-          
-          <div className="flex items-center justify-center mt-6 space-x-2">
-            <Sparkles className="w-5 h-5 text-yellow-500" />
-            <span className="text-sm font-medium text-gray-500">
-              {problemStatements.length} challenges available
+          <motion.h1 
+            className="text-6xl md:text-7xl font-bold mb-6"
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Problem Statements
             </span>
-            <Sparkles className="w-5 h-5 text-yellow-500" />
-          </div>
+          </motion.h1>
+          
+          <motion.p 
+            className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            Discover groundbreaking challenges from Smart India Hackathon 2025. 
+            Find problems that ignite your passion and drive innovation across India.
+          </motion.p>
+          
+          <motion.div 
+            className="flex items-center justify-center space-x-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <div className="flex items-center space-x-2">
+              <Stars className="w-5 h-5 text-yellow-500" />
+              <span className="text-sm font-medium text-muted-foreground">
+                {allProblemStatements.length}+ Innovation Challenges
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Globe className="w-5 h-5 text-green-500" />
+              <span className="text-sm font-medium text-muted-foreground">
+                Pan-India Impact
+              </span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Activity className="w-5 h-5 text-blue-500" />
+              <span className="text-sm font-medium text-muted-foreground">
+                Live Challenges
+              </span>
+            </div>
+          </motion.div>
         </motion.div>
 
         {/* Stats */}
         <StatsComponent 
-          problemStatements={problemStatements}
-          filteredCount={filteredProblemStatements.length}
+          problemStatements={allProblemStatements}
+          filteredCount={totalItems}
         />
 
         {/* Filters */}
@@ -213,39 +351,50 @@ export default function ProblemStatementsPage() {
           transition={{ duration: 0.5 }}
           className="flex items-center justify-between mb-8 mt-8"
         >
-          <div className="text-gray-600">
-            <span className="font-medium">{filteredProblemStatements.length}</span> 
-            {filteredProblemStatements.length === 1 ? ' problem statement' : ' problem statements'} found
-            {filteredProblemStatements.length !== problemStatements.length && (
-              <span className="text-sm text-gray-500 ml-2">
-                (filtered from {problemStatements.length} total)
+          <div className="text-muted-foreground">
+            <span className="font-medium text-foreground">{totalItems}</span> 
+            {totalItems === 1 ? ' problem statement' : ' problem statements'} found
+            {totalItems !== allProblemStatements.length && (
+              <span className="text-sm text-muted-foreground ml-2">
+                (filtered from {allProblemStatements.length} total)
               </span>
             )}
           </div>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="border-blue-200 text-blue-600 hover:bg-blue-50"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={paginationLoading}
+              className="border-primary/20 text-primary hover:bg-primary/5 backdrop-blur-sm"
+            >
+              <motion.div
+                animate={paginationLoading ? { rotate: 360 } : {}}
+                transition={{ duration: 1, repeat: paginationLoading ? Infinity : 0, ease: "linear" }}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+              </motion.div>
+              Refresh
+            </Button>
+          </motion.div>
         </motion.div>
 
         {/* Problem Statements Grid */}
         <AnimatePresence mode="wait">
-          {currentItems.length > 0 ? (
+          {problemStatements.length > 0 ? (
             <motion.div
-              key={currentPage}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              key={`page-${currentPage}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.5 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16"
             >
-              {currentItems.map((ps, index) => (
+              {problemStatements.map((ps, index) => (
                 <ProblemStatementCard
                   key={ps._id}
                   problemStatement={ps}
@@ -258,67 +407,47 @@ export default function ProblemStatementsPage() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              className="text-center py-12"
+              className="text-center py-20"
             >
-              <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Problem Statements Found</h3>
-              <p className="text-gray-500 mb-6">Try adjusting your filters or search terms</p>
-              <Button onClick={clearFilters} variant="outline">
-                Clear All Filters
-              </Button>
+              <motion.div
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 5, -5, 0]
+                }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="text-8xl mb-6"
+              >
+                🔍
+              </motion.div>
+              <h3 className="text-2xl font-bold text-foreground mb-3">No Problem Statements Found</h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                We couldn't find any challenges matching your criteria. Try adjusting your filters or search terms.
+              </p>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button 
+                  onClick={clearFilters} 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Clear All Filters
+                </Button>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex justify-center items-center space-x-2 mt-12"
-          >
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2"
-            >
-              Previous
-            </Button>
-
-            <div className="flex space-x-1">
-              {[...Array(Math.min(totalPages, 5))].map((_, i) => {
-                const pageNum = i + 1;
-                const isActive = pageNum === currentPage;
-                
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={isActive ? "default" : "outline"}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`w-10 h-10 ${
-                      isActive 
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white' 
-                        : 'border-gray-200'
-                    }`}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2"
-            >
-              Next
-            </Button>
-          </motion.div>
-        )}
+        <AnimatedPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={handlePageChange}
+          loading={paginationLoading}
+        />
       </div>
     </div>
   );

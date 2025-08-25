@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { 
   Home, 
   Target, 
@@ -14,7 +15,8 @@ import {
   BarChart3,
   Menu,
   X,
-  Zap
+  Zap,
+  Sparkles
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -33,96 +35,189 @@ export const Navigation = () => {
   const isActive = (href: string) => pathname === href;
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+    <motion.nav 
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+      className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-lg"
+    >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg">
+            <motion.div 
+              className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl shadow-lg"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <Zap className="w-6 h-6 text-white" />
-            </div>
+            </motion.div>
             <div className="hidden sm:block">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <motion.h1 
+                className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
+                whileHover={{ scale: 1.05 }}
+              >
                 SIH Hub
-              </h1>
+              </motion.h1>
+              <motion.div
+                animate={{ 
+                  opacity: [0.5, 1, 0.5],
+                  scale: [1, 1.02, 1]
+                }}
+                transition={{ 
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                <Sparkles className="w-3 h-3 text-yellow-500 ml-auto" />
+              </motion.div>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive(item.href) ? "default" : "ghost"}
-                  size="sm"
-                  className={`relative px-4 py-2 transition-all duration-200 ${
-                    isActive(item.href)
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 mr-2" />
-                  {item.label}
-                  {isActive(item.href) && (
+          <div className="hidden md:flex items-center space-x-2">
+            {navItems.map((item, index) => (
+              <motion.div
+                key={item.href}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <Link href={item.href}>
+                  <Button
+                    variant={isActive(item.href) ? "default" : "ghost"}
+                    size="sm"
+                    className={`relative px-4 py-2 transition-all duration-300 group ${
+                      isActive(item.href)
+                        ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-xl shadow-purple-500/25'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    }`}
+                  >
                     <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-md -z-10"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="flex items-center"
+                    >
+                      <item.icon className="w-4 h-4 mr-2" />
+                      {item.label}
+                    </motion.div>
+                    
+                    {/* Animated underline for active state */}
+                    {isActive(item.href) && (
+                      <motion.div
+                        layoutId="activeIndicator"
+                        className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    
+                    {/* Hover effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      whileHover={{ scale: 1.05 }}
                     />
-                  )}
-                </Button>
-              </Link>
+                  </Button>
+                </Link>
+              </motion.div>
             ))}
           </div>
 
-          {/* Mobile menu button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </Button>
+          {/* Theme Toggle & Mobile Menu */}
+          <div className="flex items-center space-x-3">
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+            >
+              <ThemeToggle />
+            </motion.div>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden relative overflow-hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              <motion.div
+                animate={{ rotate: isMobileMenuOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </motion.div>
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-gray-200 py-4"
-          >
-            <div className="flex flex-col space-y-2">
-              {navItems.map((item) => (
+        <motion.div
+          initial={false}
+          animate={{ 
+            height: isMobileMenuOpen ? "auto" : 0,
+            opacity: isMobileMenuOpen ? 1 : 0
+          }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="md:hidden overflow-hidden border-t border-border/50"
+        >
+          <div className="py-4 space-y-2">
+            {navItems.map((item, index) => (
+              <motion.div
+                key={item.href}
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ 
+                  x: isMobileMenuOpen ? 0 : -50, 
+                  opacity: isMobileMenuOpen ? 1 : 0 
+                }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+              >
                 <Link
-                  key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <Button
                     variant={isActive(item.href) ? "default" : "ghost"}
                     size="sm"
-                    className={`w-full justify-start ${
+                    className={`w-full justify-start relative group ${
                       isActive(item.href)
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                        ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                     }`}
                   >
                     <item.icon className="w-4 h-4 mr-3" />
                     {item.label}
+                    
+                    {isActive(item.href) && (
+                      <motion.div
+                        className="absolute right-3 w-2 h-2 bg-yellow-400 rounded-full"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                    )}
                   </Button>
                 </Link>
-              ))}
-            </div>
-          </motion.div>
-        )}
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </div>
-    </nav>
+      
+      {/* Animated gradient border */}
+      <motion.div
+        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-50"
+        animate={{ 
+          backgroundImage: [
+            "linear-gradient(90deg, transparent, #a855f7, transparent)",
+            "linear-gradient(90deg, transparent, #ec4899, transparent)",
+            "linear-gradient(90deg, transparent, #3b82f6, transparent)",
+            "linear-gradient(90deg, transparent, #a855f7, transparent)",
+          ]
+        }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </motion.nav>
   );
 };
