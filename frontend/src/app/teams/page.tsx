@@ -9,7 +9,7 @@ import { Users, Plus, MessageCircle, Star, MapPin, Calendar } from 'lucide-react
 
 export default function TeamsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <motion.div
@@ -18,15 +18,15 @@ export default function TeamsPage() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-green-600 to-blue-600 rounded-full mb-6">
-            <Users className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center p-3 bg-primary rounded-full mb-6">
+            <Users className="w-8 h-8 text-primary-foreground" />
           </div>
           
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-5xl font-bold text-primary mb-4">
             Team Formation
           </h1>
           
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Connect with talented individuals, form amazing teams, and collaborate on innovative solutions.
           </p>
         </motion.div>
@@ -38,56 +38,56 @@ export default function TeamsPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="max-w-2xl mx-auto"
         >
-          <Card className="bg-white shadow-2xl border-0 overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 via-blue-500 to-purple-500"></div>
+          <Card className="bg-card shadow-lg border overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-primary"></div>
             
             <CardHeader className="text-center pb-6">
               <div className="text-6xl mb-4">🚀</div>
-              <CardTitle className="text-3xl font-bold text-gray-800 mb-4">
+              <CardTitle className="text-3xl font-bold text-foreground mb-4">
                 Coming Soon!
               </CardTitle>
-              <p className="text-gray-600 text-lg">
+              <p className="text-muted-foreground text-lg">
                 We're building an amazing team formation platform with the following features:
               </p>
             </CardHeader>
 
             <CardContent className="space-y-4">
               <div className="grid gap-4">
-                <div className="flex items-center p-4 bg-green-50 rounded-lg">
-                  <Users className="w-6 h-6 text-green-600 mr-3" />
+                <div className="flex items-center p-4 bg-primary/10 rounded-lg">
+                  <Users className="w-6 h-6 text-primary mr-3" />
                   <div>
-                    <h3 className="font-semibold text-gray-800">Smart Matching</h3>
-                    <p className="text-sm text-gray-600">AI-powered team member recommendations based on skills and interests</p>
+                    <h3 className="font-semibold text-foreground">Smart Matching</h3>
+                    <p className="text-sm text-muted-foreground">AI-powered team member recommendations based on skills and interests</p>
                   </div>
                 </div>
 
-                <div className="flex items-center p-4 bg-blue-50 rounded-lg">
-                  <MessageCircle className="w-6 h-6 text-blue-600 mr-3" />
+                <div className="flex items-center p-4 bg-secondary/10 rounded-lg">
+                  <MessageCircle className="w-6 h-6 text-secondary-foreground mr-3" />
                   <div>
-                    <h3 className="font-semibold text-gray-800">Real-time Chat</h3>
-                    <p className="text-sm text-gray-600">Communicate with potential team members instantly</p>
+                    <h3 className="font-semibold text-foreground">Real-time Chat</h3>
+                    <p className="text-sm text-muted-foreground">Communicate with potential team members instantly</p>
                   </div>
                 </div>
 
-                <div className="flex items-center p-4 bg-purple-50 rounded-lg">
-                  <Star className="w-6 h-6 text-purple-600 mr-3" />
+                <div className="flex items-center p-4 bg-accent/10 rounded-lg">
+                  <Star className="w-6 h-6 text-accent-foreground mr-3" />
                   <div>
-                    <h3 className="font-semibold text-gray-800">Skill Verification</h3>
-                    <p className="text-sm text-gray-600">Verified profiles with skill assessments and portfolio links</p>
+                    <h3 className="font-semibold text-foreground">Skill Verification</h3>
+                    <p className="text-sm text-muted-foreground">Verified profiles with skill assessments and portfolio links</p>
                   </div>
                 </div>
 
-                <div className="flex items-center p-4 bg-orange-50 rounded-lg">
-                  <Calendar className="w-6 h-6 text-orange-600 mr-3" />
+                <div className="flex items-center p-4 bg-muted/50 rounded-lg">
+                  <Calendar className="w-6 h-6 text-muted-foreground mr-3" />
                   <div>
-                    <h3 className="font-semibold text-gray-800">Event Integration</h3>
-                    <p className="text-sm text-gray-600">Seamless integration with hackathon timelines and deadlines</p>
+                    <h3 className="font-semibold text-foreground">Event Integration</h3>
+                    <p className="text-sm text-muted-foreground">Seamless integration with hackathon timelines and deadlines</p>
                   </div>
                 </div>
               </div>
 
               <div className="pt-6 text-center">
-                <Badge className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-4 py-2 text-sm">
+                <Badge className="bg-primary text-primary-foreground px-4 py-2 text-sm">
                   Expected Launch: Coming Soon
                 </Badge>
               </div>
@@ -102,12 +102,13 @@ export default function TeamsPage() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-center mt-12"
         >
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted-foreground mb-6">
             Want to be notified when the team formation feature goes live?
           </p>
           <Button 
             size="lg" 
-            className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-4"
+            variant="default"
+            className="px-8 py-4"
           >
             <Plus className="w-5 h-5 mr-2" />
             Notify Me

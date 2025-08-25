@@ -120,8 +120,8 @@ export function FilterComponent({
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="p-3 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl shadow-lg">
-              <SlidersHorizontal className="w-6 h-6 text-white" />
+            <div className="p-3 bg-primary rounded-2xl shadow-lg">
+              <SlidersHorizontal className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">Smart Filters</h2>
@@ -143,7 +143,7 @@ export function FilterComponent({
               >
                 <Badge 
                   variant="secondary" 
-                  className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 text-blue-700 dark:text-blue-300 border-blue-200/50"
+                  className="bg-primary/10 text-primary border-primary/20"
                 >
                   <Filter className="w-3 h-3 mr-1" />
                   {activeFilterCount} active
@@ -256,7 +256,7 @@ export function FilterComponent({
                   onClick={() => onCategoryChange(category)}
                   className={`transition-all duration-300 ${
                     selectedCategory === category
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                      ? 'bg-primary text-primary-foreground shadow-lg'
                       : 'border-border/50 hover:border-border hover:bg-muted/50'
                   }`}
                 >

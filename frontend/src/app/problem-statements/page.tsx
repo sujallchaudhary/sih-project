@@ -40,7 +40,7 @@ export default function ProblemStatementsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 12;
+  const itemsPerPage = 10;
 
   // Fetch initial data and filters
   useEffect(() => {
@@ -139,7 +139,7 @@ export default function ProblemStatementsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[60vh]">
             <motion.div
@@ -158,7 +158,7 @@ export default function ProblemStatementsPage() {
               </motion.div>
               
               <div className="space-y-3">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <h2 className="text-2xl font-bold text-primary">
                   Loading Problem Statements
                 </h2>
                 <p className="text-muted-foreground">Fetching the latest challenges for you...</p>
@@ -199,7 +199,7 @@ export default function ProblemStatementsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center min-h-[60vh]">
             <motion.div
@@ -213,7 +213,7 @@ export default function ProblemStatementsPage() {
               </Alert>
               <Button 
                 onClick={handleRefresh} 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                variant="default"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Try Again
@@ -226,28 +226,8 @@ export default function ProblemStatementsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{ 
-            rotate: [0, 360],
-            scale: [1, 1.1, 1]
-          }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ 
-            rotate: [360, 0],
-            scale: [1, 1.2, 1]
-          }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-pink-500/5 to-cyan-500/5 rounded-full blur-3xl"
-        />
-      </div>
-
-      <div className="container mx-auto px-4 py-8 relative z-10">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
@@ -256,22 +236,13 @@ export default function ProblemStatementsPage() {
           className="text-center mb-16"
         >
           <motion.div 
-            className="inline-flex items-center justify-center p-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-2xl mb-8 shadow-2xl shadow-purple-500/25"
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            animate={{ 
-              boxShadow: [
-                "0 0 20px rgba(139, 92, 246, 0.3)",
-                "0 0 40px rgba(59, 130, 246, 0.4)",
-                "0 0 20px rgba(236, 72, 153, 0.3)",
-                "0 0 20px rgba(139, 92, 246, 0.3)",
-              ]
-            }}
+            className="inline-flex items-center justify-center p-4 bg-primary rounded-2xl mb-8 shadow-lg"
+            whileHover={{ scale: 1.05 }}
             transition={{ 
-              boxShadow: { duration: 3, repeat: Infinity },
-              hover: { duration: 0.3 }
+              duration: 0.3
             }}
           >
-            <Rocket className="w-10 h-10 text-white" />
+            <Rocket className="w-10 h-10 text-primary-foreground" />
           </motion.div>
           
           <motion.h1 
@@ -280,7 +251,7 @@ export default function ProblemStatementsPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <span className="text-primary">
               Problem Statements
             </span>
           </motion.h1>
@@ -429,7 +400,7 @@ export default function ProblemStatementsPage() {
               >
                 <Button 
                   onClick={clearFilters} 
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  variant="default"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Clear All Filters

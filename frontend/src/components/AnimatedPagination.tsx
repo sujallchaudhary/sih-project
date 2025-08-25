@@ -159,31 +159,26 @@ export const AnimatedPagination: React.FC<PaginationProps> = ({
                       disabled={loading}
                       className={`w-10 h-10 rounded-xl transition-all duration-300 relative overflow-hidden ${
                         currentPage === page
-                          ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 border-0'
+                          ? 'bg-primary text-primary-foreground shadow-lg border-0'
                           : 'border-0 hover:bg-accent/50 text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <span className="relative z-10">{page}</span>
                       
-                      {/* Animated background for active page */}
+                      {/* Active state indicator */}
                       {currentPage === page && (
                         <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
-                          animate={{
-                            background: [
-                              "linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899)",
-                              "linear-gradient(90deg, #ec4899, #3b82f6, #8b5cf6)",
-                              "linear-gradient(90deg, #8b5cf6, #ec4899, #3b82f6)",
-                            ]
-                          }}
-                          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                          className="absolute inset-0 bg-primary"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.3 }}
                         />
                       )}
                       
                       {/* Hover effect */}
                       {currentPage !== page && (
                         <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          className="absolute inset-0 bg-accent/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                           whileHover={{ opacity: 1 }}
                         />
                       )}
@@ -193,7 +188,7 @@ export const AnimatedPagination: React.FC<PaginationProps> = ({
                     {currentPage === page && (
                       <motion.div
                         layoutId="activePage"
-                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
+                        className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-primary rounded-full"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                       />
                     )}

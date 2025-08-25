@@ -46,7 +46,7 @@ export const Navigation = () => {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
             <motion.div 
-              className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-xl shadow-lg"
+              className="flex items-center justify-center w-10 h-10 bg-primary rounded-xl shadow-lg"
               whileHover={{ scale: 1.1, rotate: 5 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -54,7 +54,7 @@ export const Navigation = () => {
             </motion.div>
             <div className="hidden sm:block">
               <motion.h1 
-                className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
+                className="text-xl font-bold text-foreground"
                 whileHover={{ scale: 1.05 }}
               >
                 SIH Hub
@@ -90,7 +90,7 @@ export const Navigation = () => {
                     size="sm"
                     className={`relative px-4 py-2 transition-all duration-300 group ${
                       isActive(item.href)
-                        ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-xl shadow-purple-500/25'
+                        ? 'bg-primary text-primary-foreground shadow-lg'
                         : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                     }`}
                   >
@@ -107,14 +107,14 @@ export const Navigation = () => {
                     {isActive(item.href) && (
                       <motion.div
                         layoutId="activeIndicator"
-                        className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full"
+                        className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-primary rounded-full"
                         transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                       />
                     )}
                     
                     {/* Hover effect */}
                     <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      className="absolute inset-0 bg-accent/30 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                       whileHover={{ scale: 1.05 }}
                     />
                   </Button>
@@ -183,7 +183,7 @@ export const Navigation = () => {
                     size="sm"
                     className={`w-full justify-start relative group ${
                       isActive(item.href)
-                        ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white shadow-lg'
+                        ? 'bg-primary text-primary-foreground shadow-lg'
                         : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                     }`}
                   >
@@ -192,7 +192,7 @@ export const Navigation = () => {
                     
                     {isActive(item.href) && (
                       <motion.div
-                        className="absolute right-3 w-2 h-2 bg-yellow-400 rounded-full"
+                        className="absolute right-3 w-2 h-2 bg-primary rounded-full"
                         animate={{ scale: [1, 1.2, 1] }}
                         transition={{ duration: 2, repeat: Infinity }}
                       />
@@ -204,20 +204,6 @@ export const Navigation = () => {
           </div>
         </motion.div>
       </div>
-      
-      {/* Animated gradient border */}
-      <motion.div
-        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-50"
-        animate={{ 
-          backgroundImage: [
-            "linear-gradient(90deg, transparent, #a855f7, transparent)",
-            "linear-gradient(90deg, transparent, #ec4899, transparent)",
-            "linear-gradient(90deg, transparent, #3b82f6, transparent)",
-            "linear-gradient(90deg, transparent, #a855f7, transparent)",
-          ]
-        }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
     </motion.nav>
   );
 };
