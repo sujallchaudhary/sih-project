@@ -31,32 +31,32 @@ export function StatsComponent({ problemStatements, filteredCount }: StatsCompon
       label: "Total Challenges",
       value: totalProblemStatements,
       icon: Trophy,
-      color: "from-blue-500 to-cyan-500",
-      bgColor: "bg-blue-500/10",
+      bgColor: "bg-primary/10",
+      iconColor: "text-primary",
       description: "Active problem statements"
     },
     {
       label: "Organizations",
       value: uniqueOrganizations,
       icon: Building2,
-      color: "from-purple-500 to-pink-500",
-      bgColor: "bg-purple-500/10",
+      bgColor: "bg-secondary/10",
+      iconColor: "text-secondary-foreground",
       description: "Government & private entities"
     },
     {
       label: "Themes",
       value: uniqueThemes,
       icon: Layers3,
-      color: "from-green-500 to-emerald-500",
-      bgColor: "bg-green-500/10",
+      bgColor: "bg-accent/10",
+      iconColor: "text-accent-foreground",
       description: "Problem domains"
     },
     {
       label: "Categories",
       value: uniqueCategories,
       icon: Target,
-      color: "from-orange-500 to-red-500",
-      bgColor: "bg-orange-500/10",
+      bgColor: "bg-muted/50",
+      iconColor: "text-muted-foreground",
       description: "Challenge types"
     }
   ];
@@ -90,8 +90,8 @@ export function StatsComponent({ problemStatements, filteredCount }: StatsCompon
               }}
               className="relative group"
             >
-              {/* Background glow effect */}
-              <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-0 group-hover:opacity-20 rounded-2xl blur-xl transition-opacity duration-500`} />
+              {/* Background hover effect */}
+              <div className="absolute inset-0 bg-accent/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-500" />
               
               <div className={`relative bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl p-6 transition-all duration-300 group-hover:border-border shadow-lg hover:shadow-xl ${stat.bgColor}`}>
                 {/* Icon */}
@@ -99,9 +99,9 @@ export function StatsComponent({ problemStatements, filteredCount }: StatsCompon
                   <motion.div
                     whileHover={{ rotate: 360 }}
                     transition={{ duration: 0.6 }}
-                    className={`p-3 rounded-xl bg-gradient-to-r ${stat.color} shadow-lg`}
+                    className={`p-3 rounded-xl ${stat.bgColor} shadow-lg`}
                   >
-                    <Icon className="w-6 h-6 text-white" />
+                    <Icon className={`w-6 h-6 ${stat.iconColor}`} />
                   </motion.div>
                   
                   <motion.div
@@ -130,7 +130,7 @@ export function StatsComponent({ problemStatements, filteredCount }: StatsCompon
                     stiffness: 200
                   }}
                 >
-                  <span className={`text-4xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                  <span className={`text-4xl font-bold ${stat.iconColor}`}>
                     {stat.value.toLocaleString()}
                   </span>
                 </motion.div>
@@ -147,7 +147,7 @@ export function StatsComponent({ problemStatements, filteredCount }: StatsCompon
 
                 {/* Animated border */}
                 <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${stat.color} opacity-20 animate-pulse`} />
+                  <div className={`absolute inset-0 rounded-2xl ${stat.bgColor} opacity-50 animate-pulse`} />
                 </div>
               </div>
             </motion.div>
@@ -163,7 +163,7 @@ export function StatsComponent({ problemStatements, filteredCount }: StatsCompon
           transition={{ duration: 0.5, delay: 0.8 }}
           className="flex items-center justify-center"
         >
-          <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl px-6 py-4 backdrop-blur-sm">
+          <div className="bg-primary/10 border border-primary/20 rounded-2xl px-6 py-4 backdrop-blur-sm">
             <div className="flex items-center space-x-3">
               <motion.div
                 animate={{ rotate: [0, 360] }}
