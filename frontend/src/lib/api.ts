@@ -1,129 +1,109 @@
 import axios from 'axios';
+import { ApiResponse, ProblemStatement, FilterOptions } from '@/types/problem-statement';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://192.168.54.82:5000/';
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: BASE_URL,
   timeout: 10000,
 });
 
-// Add authentication header to requests if token is available
-api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('sessionToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.error('Unauthorized access');
     }
+    return Promise.reject(error);
   }
-  return config;
-});
+);
 
-export interface FilterOptions {
-  categories: string[];
-  themes: string[];
-  organizations: string[];
-  departments: string[];
-  difficultyLevels: string[];
-  tags: string[];
-  techStack: string[];
-  popular: {
-    tags: string[];
-    techStack: string[];
-  };
-}
-
-export interface ProblemStatement {
-  _id: string;
-  id: string;
-  title: string;
-  description: string;
-  organization: string;
-  department: string;
-  category: string;
-  theme: string;
-  youtube: string;
-  dataset: string;
-  contact: string;
-  approach: string[];
-  difficultyLevel: string;
-  summary: string;
-  tags: string[];
-  techStack: string[];
-  updatedAt: string;
-}
-
-export interface PaginationInfo {
-  currentPage: number;
-  totalPages: number;
-  totalCount: number;
-  limit: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  nextPage: number | null;
-  prevPage: number | null;
-}
-
-export interface FilterParams {
-  page?: number;
-  limit?: number;
-  category?: string;
-  theme?: string;
-  organization?: string;
-  department?: string;
-  difficultyLevel?: string;
-  difficulties?: string;
-  search?: string;
-  tags?: string;
-  techStack?: string;
-  technology?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface ProblemStatementsResponse {
+export interface PaginatedResponse<T> {
   success: boolean;
   message: string;
-  data: ProblemStatement[];
-  pagination: PaginationInfo;
-  filters: {
+  data: T[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+    currentPage?: number;
+    totalCount?: number;
+    hasNextPage?: boolean;
+    hasPrevPage?: boolean;
+    nextPage?: number | null;
+    prevPage?: number | null;
+  };
+  filters?: {
     applied: string[];
     totalFiltered: number;
   };
 }
 
-export const apiService = {
-  // Get filter options
-  getFilters: async (): Promise<FilterOptions> => {
-    try {
-      const response = await api.get('/ps/filters');
-      return response.data.data;
-    } catch (error) {
-      console.error('Error fetching filters:', error);
-      throw error;
-    }
+export const problemStatementApi = {
+  async getAllProblemStatements(page: number = 1, limit: number = 12): Promise<PaginatedResponse<ProblemStatement>> {
+    const response = await api.get(`/api/ps?page=${page}&limit=${limit}`);
+    return response.data;
   },
 
-  // Get all problem statements with filters
-  getProblemStatements: async (params: FilterParams = {}): Promise<ProblemStatementsResponse> => {
-    try {
-      const response = await api.get('/ps', { params });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching problem statements:', error);
-      throw error;
-    }
+  async getFilterOptions(): Promise<ApiResponse<FilterOptions>> {
+    const response = await api.get('/api/ps/filters');
+    return response.data;
   },
 
-  // Get single problem statement by ID
-  getProblemStatementById: async (id: string): Promise<ProblemStatement> => {
-    try {
-      const response = await api.get(`/ps/${id}`);
-      return response.data.data;
-    } catch (error) {
-      console.error('Error fetching problem statement:', error);
-      throw error;
-    }
+  async getProblemStatementById(id: string): Promise<ApiResponse<ProblemStatement>> {
+    const response = await api.get(`/api/ps/${id}`);
+    return response.data;
   },
+
+  async searchProblemStatements(
+    query: string, 
+    filters: {
+      category?: string;
+      theme?: string;
+      organization?: string;
+      department?: string;
+      difficulty?: string;
+      tags?: string;
+      techStack?: string;
+    } = {},
+    page: number = 1,
+    limit: number = 12
+  ): Promise<PaginatedResponse<ProblemStatement>> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    
+    if (query) params.append('search', query);
+    if (filters.category && filters.category !== 'all') params.append('category', filters.category);
+    if (filters.theme && filters.theme !== 'all') params.append('theme', filters.theme);
+    if (filters.organization && filters.organization !== 'all') params.append('organization', filters.organization);
+    if (filters.department && filters.department !== 'all') params.append('department', filters.department);
+    if (filters.difficulty && filters.difficulty !== 'all') params.append('difficultyLevel', filters.difficulty);
+    if (filters.tags && filters.tags.length > 0) params.append('tags', filters.tags);
+    if (filters.techStack && filters.techStack.length > 0) params.append('techStack', filters.techStack);
+    if (filters.organization && filters.organization !== 'all') params.append('organization', filters.organization);
+    if (filters.department && filters.department !== 'all') params.append('department', filters.department);
+    
+    const response = await api.get(`/api/ps?${params.toString()}`);
+    return response.data;
+  }
 };
 
-export default api;
+export const authService = {
+  async signIn(idToken: string) {
+    return api.post('/api/auth/signin', { idToken });
+  },
+  
+  async getCurrentUser(idToken: string) {
+    return api.get('/api/auth/me', {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+  },
+};
