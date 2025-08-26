@@ -8,6 +8,17 @@ const api = axios.create({
   timeout: 10000,
 });
 
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      console.error('Unauthorized access');
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface PaginatedResponse<T> {
   success: boolean;
   message: string;
@@ -63,4 +74,18 @@ export const problemStatementApi = {
     const response = await api.get(`/api/ps?${params.toString()}`);
     return response.data;
   }
+};
+
+export const authService = {
+  async signIn(idToken: string) {
+    return api.post('/api/auth/signin', { idToken });
+  },
+  
+  async getCurrentUser(idToken: string) {
+    return api.get('/api/auth/me', {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+  },
 };

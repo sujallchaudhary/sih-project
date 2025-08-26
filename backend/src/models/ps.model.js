@@ -75,9 +75,4 @@ const psSchema = new mongoose.Schema({
     timestamps: true
 });
 
-psSchema.index({ title: 'text', description: 'text' });
-psSchema.index({ category: 1 });
-psSchema.index({ theme: 1 });
-psSchema.index({ organization: 1 });
-
 module.exports = mongoose.model('ProblemStatement', psSchema);

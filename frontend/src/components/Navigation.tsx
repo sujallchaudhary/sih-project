@@ -5,8 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { GoogleSignInButton } from '@/components/GoogleSignInButton';
+import { UserProfile } from '@/components/UserProfile';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Home, 
   Target, 
@@ -23,6 +25,7 @@ import { useState } from 'react';
 export const Navigation = () => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   const navItems = [
     { href: '/', label: 'Home', icon: Home },
@@ -123,8 +126,21 @@ export const Navigation = () => {
             ))}
           </div>
 
-          {/* Theme Toggle & Mobile Menu */}
+          {/* Theme Toggle, Auth & Mobile Menu */}
           <div className="flex items-center space-x-3">
+            {/* Authentication */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+            >
+              {user ? (
+                <UserProfile />
+              ) : (
+                <GoogleSignInButton size="sm" />
+              )}
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -164,6 +180,21 @@ export const Navigation = () => {
           className="md:hidden overflow-hidden border-t border-border/50"
         >
           <div className="py-4 space-y-2">
+            {/* Mobile Auth */}
+            {!user && (
+              <motion.div
+                initial={{ x: -50, opacity: 0 }}
+                animate={{ 
+                  x: isMobileMenuOpen ? 0 : -50, 
+                  opacity: isMobileMenuOpen ? 1 : 0 
+                }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="px-2 pb-2"
+              >
+                <GoogleSignInButton className="w-full" />
+              </motion.div>
+            )}
+
             {navItems.map((item, index) => (
               <motion.div
                 key={item.href}

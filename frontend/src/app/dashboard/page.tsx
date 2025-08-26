@@ -6,8 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { BarChart3, TrendingUp, Users, Target, Calendar, Award } from 'lucide-react';
+import { withAuth } from '@/hoc/withAuth';
 
-export default function DashboardPage() {
+function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -134,3 +135,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+export default withAuth(DashboardPage);

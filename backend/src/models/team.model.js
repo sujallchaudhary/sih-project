@@ -10,6 +10,10 @@ const teamSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    teamSize:{
+        type: Number,
+        default: 1
+    },
     isDeleted:{
         type: Boolean,
         default: false
