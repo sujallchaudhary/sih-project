@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import BookmarkButton from '@/components/BookmarkButton';
+import AddToTeamButton from '@/components/AddToTeamButton';
 import Login from '@/components/Login';
 import { 
   Eye,
@@ -20,7 +21,7 @@ import Link from 'next/link';
 
 const BookmarkedProblemCard = ({ 
   problem, 
-  onBookmarkRemoved 
+  onBookmarkRemoved // eslint-disable-line @typescript-eslint/no-unused-vars
 }: { 
   problem: ProblemStatement;
   onBookmarkRemoved: (psId: string) => void;
@@ -109,12 +110,19 @@ const BookmarkedProblemCard = ({
 
       {/* Actions */}
       <div className="mt-auto pt-4">
-        <Link href={`/problems/${problem.id}`}>
-          <Button className="w-full">
-            <Eye className="h-4 w-4 mr-2" />
-            View Details
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href={`/problems/${problem.id}`} className="flex-1">
+            <Button className="w-full">
+              <Eye className="h-4 w-4 mr-2" />
+              View Details
+            </Button>
+          </Link>
+          <AddToTeamButton 
+            psId={problem._id} 
+            isAddedToTeam={problem.isAddedToTeam}
+            showText 
+          />
+        </div>
       </div>
     </CardContent>
   </Card>

@@ -231,8 +231,8 @@ const getTeamDetails = async(req,res)=>{
                 team: teamDetails,
                 currentUser: {
                     id: mongoId,
-                    isLeader: mongoId === team.leaderId._id.toString(),
-                    canManageTeam: mongoId === team.leaderId._id.toString(),
+                    isLeader: mongoId.toString() === team.leaderId._id.toString(),
+                    canManageTeam: mongoId.toString() === team.leaderId._id.toString(),
                     membershipStatus: 'active'
                 }
             }
@@ -350,6 +350,50 @@ const updateTeam = async(req, res) => {
     }
 };
 
+const getTeamInfo = async (req, res) => {
+    try {
+        const { teamId } = req.params;
+        
+        const team = await Team.findById(teamId)
+            .populate('leaderId', 'name email photoURL')
+            .lean();
+
+        if (!team) {
+            return res.status(404).json({
+                success: false,
+                message: 'Team not found'
+            });
+        }
+
+        // Return basic team info (no sensitive data)
+        const teamInfo = {
+            id: team._id,
+            name: team.name,
+            leader: {
+                name: team.leaderId.name,
+                email: team.leaderId.email,
+                photoURL: team.leaderId.photoURL
+            },
+            memberCount: team.members?.length || 0,
+            createdAt: team.createdAt
+        };
+
+        res.status(200).json({
+            success: true,
+            message: 'Team info retrieved successfully',
+            data: teamInfo
+        });
+
+    } catch (error) {
+        console.error('Error getting team info:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting team info',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createTeam,
     joinTeam,
@@ -358,5 +402,6 @@ module.exports = {
     deleteTeam,
     getTeamDetails,
     transferLeadership,
-    updateTeam
+    updateTeam,
+    getTeamInfo
 };

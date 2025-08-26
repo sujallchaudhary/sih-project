@@ -9,18 +9,22 @@ const {
     deleteTeam,
     getTeamDetails,
     transferLeadership,
-    updateTeam
+    updateTeam,
+    getTeamInfo
 } = require('../controllers/team.controller');
 
-router.post('/create', createTeam);
-router.put('/update', updateTeam);
-router.delete('/delete', deleteTeam);
+const { authenticateFirebaseToken } = require('../middlewares/jwtAuth');
 
-router.post('/join', joinTeam);
-router.post('/leave', leaveTeam);
-router.post('/remove', removeUserFromTeam);
-router.post('/transfer-leadership', transferLeadership);
+router.post('/create', authenticateFirebaseToken, createTeam);
+router.put('/update', authenticateFirebaseToken, updateTeam);
+router.delete('/delete', authenticateFirebaseToken, deleteTeam);
 
-router.get('/details', getTeamDetails);
+router.post('/join', authenticateFirebaseToken, joinTeam);
+router.delete('/leave', authenticateFirebaseToken, leaveTeam);
+router.delete('/remove-user', authenticateFirebaseToken, removeUserFromTeam);
+router.post('/transfer-leadership', authenticateFirebaseToken, transferLeadership);
+
+router.get('/details', authenticateFirebaseToken, getTeamDetails);
+router.get('/info/:teamId', getTeamInfo); // Public endpoint for basic team info
 
 module.exports = router;

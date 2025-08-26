@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import BookmarkButton from '@/components/BookmarkButton';
+import AddToTeamButton from '@/components/AddToTeamButton';
 import { 
   Select, 
   SelectContent, 
@@ -126,19 +127,21 @@ const ProblemCard = ({ problem }: { problem: ProblemStatement }) => (
         </div>
       </div>
 
-      {/* View Details Button - Always at bottom */}
-      <div className="mt-auto pt-4 flex gap-2">
-        <Link href={`/problems/${problem.id}`} className="flex-1">
-          <Button className="w-full">
-            <Eye className="h-4 w-4 mr-2" />
-            View Details
-          </Button>
-        </Link>
-        <BookmarkButton 
-          psId={problem._id} 
-          isBookmarked={problem.isBookmarked}
-          showText 
-        />
+      {/* Action Buttons - Always at bottom */}
+      <div className="mt-auto pt-4">
+        <div className="flex gap-2">
+          <Link href={`/problems/${problem.id}`} className="flex-1">
+            <Button className="w-full">
+              <Eye className="h-4 w-4 mr-2" />
+              View Details
+            </Button>
+          </Link>
+          <AddToTeamButton 
+            psId={problem._id} 
+            isAddedToTeam={problem.isAddedToTeam}
+            showText 
+          />
+        </div>
       </div>
     </CardContent>
   </Card>

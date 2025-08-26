@@ -52,6 +52,7 @@ export interface ProblemStatement {
   techStack: string[];
   updatedAt: string;
   isBookmarked?: boolean;
+  isAddedToTeam?: boolean;
 }
 
 export interface PaginationInfo {

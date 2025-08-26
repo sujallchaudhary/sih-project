@@ -42,7 +42,8 @@ const authenticateFirebaseToken = async (req, res, next) => {
             uid: decodedToken.uid,
             email: decodedToken.email,
             name: user.name,
-            mongoId: user._id
+            mongoId: user._id,
+            teamId: user.teamId
         };
 
         next();

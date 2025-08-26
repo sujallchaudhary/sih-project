@@ -100,25 +100,35 @@ const getAllProblemStatements = async (req, res) => {
             .limit(limit)
             .lean();
 
-        // Add bookmark information if user is logged in
+        // Add bookmark and team information if user is logged in
         let problemStatementsWithBookmarks = problemStatements;
         if (req.user && req.user.mongoId) {
+            // Get bookmarks
             const bookmarks = await Bookmark.find({
                 userId: req.user.mongoId,
                 problemStatementId: { $in: problemStatements.map(ps => ps._id) },
                 isDeleted: { $ne: true }
             }).lean();
 
+            // Get team choices
+            const teamChoices = await ChoosenPs.find({
+                userId: req.user.mongoId,
+                problemStatementId: { $in: problemStatements.map(ps => ps._id) }
+            }).lean();
+
             const bookmarkMap = new Map(bookmarks.map(bookmark => [bookmark.problemStatementId.toString(), true]));
+            const teamChoiceMap = new Map(teamChoices.map(choice => [choice.problemStatementId.toString(), true]));
 
             problemStatementsWithBookmarks = problemStatements.map(ps => ({
                 ...ps,
-                isBookmarked: bookmarkMap.has(ps._id.toString()) || false
+                isBookmarked: bookmarkMap.has(ps._id.toString()) || false,
+                isAddedToTeam: teamChoiceMap.has(ps._id.toString()) || false
             }));
         } else {
             problemStatementsWithBookmarks = problemStatements.map(ps => ({
                 ...ps,
-                isBookmarked: false
+                isBookmarked: false,
+                isAddedToTeam: false
             }));
         }
 
@@ -177,8 +187,9 @@ const getProblemStatementById = async (req, res) => {
             });
         }
 
-        // Add bookmark information if user is logged in
+        // Add bookmark and team information if user is logged in
         let isBookmarked = false;
+        let isAddedToTeam = false;
         if (req.user && req.user.mongoId) {
             const bookmark = await Bookmark.findOne({
                 userId: req.user.mongoId,
@@ -186,17 +197,24 @@ const getProblemStatementById = async (req, res) => {
                 isDeleted: { $ne: true }
             });
             isBookmarked = !!bookmark;
+
+            const teamChoice = await ChoosenPs.findOne({
+                userId: req.user.mongoId,
+                problemStatementId: problemStatement._id
+            });
+            isAddedToTeam = !!teamChoice;
         }
 
-        const problemStatementWithBookmark = {
+        const problemStatementWithData = {
             ...problemStatement,
-            isBookmarked
+            isBookmarked,
+            isAddedToTeam
         };
 
         res.status(200).json({
             success: true,
             message: 'Problem statement fetched successfully',
-            data: problemStatementWithBookmark
+            data: problemStatementWithData
         });
     } catch (error) {
         console.error('Error fetching problem statement:', error);
@@ -337,7 +355,7 @@ const addPsToTeam = async(req, res)=>{
     const {mongoId} = req.user;
 
     try {
-        const existingChoosenPs = await ChoosenPs.findOne({ userId: mongoId, problemStatementId: psId });
+        const existingChoosenPs = await ChoosenPs.findOne({ userId: mongoId, problemStatementId: psId ,isDeleted:false});
 
         if (existingChoosenPs) {
             return res.status(400).json({
@@ -348,7 +366,8 @@ const addPsToTeam = async(req, res)=>{
 
         const newChoosenPs = await ChoosenPs.create({
             userId: mongoId,
-            problemStatementId: psId
+            problemStatementId: psId,
+            teamId: req.user.teamId
         });
 
         if(!newChoosenPs){
@@ -401,6 +420,182 @@ const deletePsFromTeam = async(req, res)=>{
         res.status(500).json({
             success: false,
             message: 'Error removing problem statement from team',
+            error: error.message
+        });
+    }
+};
+
+const getTeamProblemStatements = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const { mongoId } = req.user;
+
+        // Get user's team information
+        const User = require('../models/user.model');
+        const user = await User.findById(mongoId).populate('teamId');
+        
+        if (!user.teamId) {
+            return res.status(400).json({
+                success: false,
+                message: 'User is not in a team',
+            });
+        }
+
+        // Get all team members
+        const teamMembers = await User.find({
+            teamId: user.teamId._id
+        }).select('_id').lean();
+
+        const teamMemberIds = teamMembers.map(member => member._id);
+
+        // Get problem statements chosen by team members
+        const teamPsChoices = await ChoosenPs.find({
+            userId: { $in: teamMemberIds },
+            isDeleted: { $ne: true }
+        }).populate('userId', 'name email photoURL').lean();
+
+        if (!teamPsChoices || teamPsChoices.length === 0) {
+            return res.status(200).json({
+                success: true,
+                message: 'No problem statements found for this team',
+                data: [],
+                pagination: {
+                    currentPage: page,
+                    totalPages: 0,
+                    totalCount: 0,
+                    limit: limit,
+                    hasNextPage: false,
+                    hasPrevPage: false,
+                    nextPage: null,
+                    prevPage: null
+                },
+                teamInfo: {
+                    teamId: user.teamId._id,
+                    teamName: user.teamId.name,
+                    memberCount: teamMemberIds.length
+                }
+            });
+        }
+
+        const teamPsIds = teamPsChoices.map(choice => choice.problemStatementId);
+
+        // Apply additional filters if provided
+        const filter = {
+            _id: { $in: teamPsIds }
+        };
+
+        if (req.query.category) {
+            filter.category = { $regex: req.query.category, $options: 'i' };
+        }
+
+        if (req.query.theme) {
+            filter.theme = { $regex: req.query.theme, $options: 'i' };
+        }
+
+        if (req.query.difficultyLevel) {
+            filter.difficultyLevel = req.query.difficultyLevel;
+        }
+
+        if (req.query.search) {
+            filter.$or = [
+                { title: { $regex: req.query.search, $options: 'i' } },
+                { description: { $regex: req.query.search, $options: 'i' } },
+                { summary: { $regex: req.query.search, $options: 'i' } }
+            ];
+        }
+
+        if (req.query.tags) {
+            const tagsArray = req.query.tags.split(',').map(tag => tag.trim());
+            filter.tags = { $in: tagsArray };
+        }
+
+        if (req.query.techStack) {
+            const techArray = req.query.techStack.split(',').map(tech => tech.trim());
+            filter.techStack = { $in: techArray };
+        }
+
+        // Sorting options
+        let sortOptions = {};
+        if (req.query.sortBy) {
+            const sortField = req.query.sortBy;
+            const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
+            sortOptions[sortField] = sortOrder;
+        } else {
+            sortOptions.createdAt = -1;
+        }
+
+        // Execute query with pagination
+        const problemStatements = await ProblemStatement.find(filter)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        // Add team context to each problem statement
+        const problemStatementsWithTeamContext = problemStatements.map(ps => {
+            const psChoices = teamPsChoices.filter(choice => 
+                choice.problemStatementId.toString() === ps._id.toString()
+            );
+            
+            return {
+                ...ps,
+                isBookmarked: false, // We can add bookmark check here if needed
+                teamContext: {
+                    chosenBy: psChoices.map(choice => ({
+                        userId: choice.userId._id,
+                        userName: choice.userId.name,
+                        userEmail: choice.userId.email,
+                        userPhoto: choice.userId.photoURL,
+                        chosenAt: choice.createdAt
+                    })),
+                    chosenCount: psChoices.length,
+                    isChosenByCurrentUser: psChoices.some(choice => 
+                        choice.userId._id.toString() === mongoId
+                    )
+                }
+            };
+        });
+
+        const totalCount = await ProblemStatement.countDocuments(filter);
+        const totalPages = Math.ceil(totalCount / limit);
+        const hasNextPage = page < totalPages;
+        const hasPrevPage = page > 1;
+
+        res.status(200).json({
+            success: true,
+            message: "Team problem statements fetched successfully",
+            data: problemStatementsWithTeamContext,
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalCount: totalCount,
+                limit: limit,
+                hasNextPage: hasNextPage,
+                hasPrevPage: hasPrevPage,
+                nextPage: hasNextPage ? page + 1 : null,
+                prevPage: hasPrevPage ? page - 1 : null
+            },
+            filters: {
+                applied: Object.keys(req.query).filter(key => 
+                    !['page', 'limit', 'sortBy', 'sortOrder'].includes(key)
+                ),
+                totalFiltered: totalCount
+            },
+            teamInfo: {
+                teamId: user.teamId._id,
+                teamName: user.teamId.name,
+                memberCount: teamMemberIds.length,
+                totalPsChosen: teamPsIds.length
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching team problem statements:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching team problem statements',
             error: error.message
         });
     }
@@ -499,10 +694,18 @@ const getBookmarkedProblemStatements = async (req, res) => {
             .limit(limit)
             .lean();
 
-        // Add isBookmarked: true to all results since these are bookmarked
+        // Add isBookmarked: true and check isAddedToTeam for all results since these are bookmarked
+        const teamChoices = await ChoosenPs.find({
+            userId: mongoId,
+            problemStatementId: { $in: problemStatements.map(ps => ps._id) }
+        }).lean();
+
+        const teamChoiceMap = new Map(teamChoices.map(choice => [choice.problemStatementId.toString(), true]));
+
         const problemStatementsWithBookmarks = problemStatements.map(ps => ({
             ...ps,
-            isBookmarked: true
+            isBookmarked: true,
+            isAddedToTeam: teamChoiceMap.has(ps._id.toString()) || false
         }));
 
         const totalCount = await ProblemStatement.countDocuments(filter);
@@ -550,5 +753,6 @@ module.exports = {
     deleteBookMark,
     addPsToTeam,
     deletePsFromTeam,
+    getTeamProblemStatements,
     getBookmarkedProblemStatements
 };

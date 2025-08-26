@@ -8,6 +8,7 @@ const {
     deleteBookMark,
     addPsToTeam,
     deletePsFromTeam,
+    getTeamProblemStatements,
     getBookmarkedProblemStatements
 } = require('../controllers/ps.controller');
 const {authenticateFirebaseToken, optionalAuthenticateFirebaseToken} = require('../middlewares/jwtAuth');
@@ -15,6 +16,7 @@ const {authenticateFirebaseToken, optionalAuthenticateFirebaseToken} = require('
 router.get('/', optionalAuthenticateFirebaseToken, getAllProblemStatements);
 router.get('/filters', getFilterOptions);
 router.get('/bookmarked', authenticateFirebaseToken, getBookmarkedProblemStatements);
+router.get('/team', authenticateFirebaseToken, getTeamProblemStatements);
 router.get('/:id', optionalAuthenticateFirebaseToken, getProblemStatementById);
 
 router.post('/bookmark', authenticateFirebaseToken, bookMarkPS);
