@@ -1,6 +1,7 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +11,7 @@ const api = axios.create({
 // Add authentication header to requests if token is available
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('sessionToken');
+    const token = Cookies.get('idToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -50,6 +51,7 @@ export interface ProblemStatement {
   tags: string[];
   techStack: string[];
   updatedAt: string;
+  isBookmarked?: boolean;
 }
 
 export interface PaginationInfo {
@@ -121,6 +123,39 @@ export const apiService = {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching problem statement:', error);
+      throw error;
+    }
+  },
+
+  // Bookmark a problem statement
+  bookmarkProblemStatement: async (psId: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await api.post('/ps/bookmark', { psId });
+      return response.data;
+    } catch (error) {
+      console.error('Error bookmarking problem statement:', error);
+      throw error;
+    }
+  },
+
+  // Remove bookmark from problem statement
+  removeBookmark: async (psId: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await api.delete('/ps/bookmark', { data: { psId } });
+      return response.data;
+    } catch (error) {
+      console.error('Error removing bookmark:', error);
+      throw error;
+    }
+  },
+
+  // Get bookmarked problem statements
+  getBookmarkedProblemStatements: async (params: FilterParams = {}): Promise<ProblemStatementsResponse> => {
+    try {
+      const response = await api.get('/ps/bookmarked', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching bookmarked problem statements:', error);
       throw error;
     }
   },

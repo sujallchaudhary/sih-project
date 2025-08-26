@@ -6,6 +6,7 @@ import { apiService, ProblemStatement } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import BookmarkButton from '@/components/BookmarkButton';
 import { 
   ArrowLeft, 
   Building, 
@@ -126,12 +127,19 @@ const ProblemDetailPage = () => {
               <p className="text-lg text-gray-600">{problem.summary}</p>
             </div>
             <div className="flex flex-col items-start lg:items-end gap-2">
-              <Badge 
-                variant={problem.difficultyLevel === 'hard' ? 'destructive' : 'secondary'}
-                className="text-sm"
-              >
-                {problem.difficultyLevel.charAt(0).toUpperCase() + problem.difficultyLevel.slice(1)}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <BookmarkButton 
+                  psId={problem._id} 
+                  isBookmarked={problem.isBookmarked}
+                  showText 
+                />
+                <Badge 
+                  variant={problem.difficultyLevel === 'hard' ? 'destructive' : 'secondary'}
+                  className="text-sm"
+                >
+                  {problem.difficultyLevel.charAt(0).toUpperCase() + problem.difficultyLevel.slice(1)}
+                </Badge>
+              </div>
               <div className="text-sm text-gray-500">ID: {problem.id}</div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Github, Linkedin, Mail, ExternalLink, Lightbulb } from 'lucide-react';
+import { Github, Linkedin, Mail, ExternalLink } from 'lucide-react';
 
 const Footer = () => {
   return (
@@ -14,7 +14,7 @@ const Footer = () => {
                 <div className="bg-orange-500 text-white px-2 py-1 rounded-lg font-bold text-lg">
                   SIH
                 </div>
-                <span className="text-xl font-bold text-blue-600">Hub</span>
+                <span className="text-xl font-bold text-green-600">Hub</span>
               </div>
             </div>
             <p className="text-gray-600 mb-4 max-w-md">

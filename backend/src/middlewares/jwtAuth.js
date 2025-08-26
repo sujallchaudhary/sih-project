@@ -82,6 +82,56 @@ const authenticateFirebaseToken = async (req, res, next) => {
     }
 };
 
+// Optional Firebase authentication middleware - allows both authenticated and non-authenticated users
+const optionalAuthenticateFirebaseToken = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+
+        // If no auth header, continue without user data
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            req.user = null;
+            return next();
+        }
+
+        const idToken = authHeader.split(' ')[1];
+
+        // If no token, continue without user data
+        if (!idToken) {
+            req.user = null;
+            return next();
+        }
+
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(idToken);
+            const user = await User.findOne({ firebaseUid: decodedToken.uid });
+
+            if (user && user.isActive) {
+                req.user = {
+                    uid: decodedToken.uid,
+                    email: decodedToken.email,
+                    name: user.name,
+                    mongoId: user._id
+                };
+            } else {
+                req.user = null;
+            }
+        } catch (authError) {
+            // If token is invalid, continue without user data
+            console.log('Optional auth failed, continuing without user:', authError.message);
+            req.user = null;
+        }
+
+        next();
+
+    } catch (error) {
+        console.error('Optional Authentication Error:', error);
+        // In case of any error, continue without user data
+        req.user = null;
+        next();
+    }
+};
+
 module.exports = {
     authenticateFirebaseToken,
+    optionalAuthenticateFirebaseToken,
 };

@@ -2,9 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Lightbulb } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import Login from './Login';
+import UserProfile from './UserProfile';
 
 const Header = () => {
+  const { user, loading } = useAuth();
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -31,10 +34,26 @@ const Header = () => {
             <Link href="/problems" className="text-gray-700 hover:text-orange-500 transition-colors font-medium">
               Problem Statements
             </Link>
+            {user && (
+              <Link href="/bookmarks" className="text-gray-700 hover:text-orange-500 transition-colors font-medium">
+                Bookmarks
+              </Link>
+            )}
             <Link href="/team" className="text-gray-700 hover:text-orange-500 transition-colors font-medium">
               Team
             </Link>
           </nav>
+
+          {/* Auth Section */}
+          <div className="flex items-center">
+            {loading ? (
+              <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+            ) : user ? (
+              <UserProfile />
+            ) : (
+              <Login />
+            )}
+          </div>
         </div>
       </div>
     </header>
