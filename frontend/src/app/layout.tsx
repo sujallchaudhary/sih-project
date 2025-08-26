@@ -15,8 +15,23 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SIHconnect - Smart India Hackathon Problem Statements",
+  title: "SIH Hub",
   description: "Explore Smart India Hackathon problem statements and find your next innovative challenge.",
+  keywords: ["SIH Hub", "Smart India Hackathon", "Problem Statements", "Innovation"],
+  openGraph: {
+    title: "SIH Hub",
+    description: "Explore Smart India Hackathon problem statements and find your next innovative challenge.",
+    url: "https://sih2025.vercel.app",
+    siteName: "SIH Hub",
+    images: [
+      {
+        url: "https://hajiriresource.blob.core.windows.net/drive/6855a16b063f65d55faa775e/1756228805275-Screenshot_2025-08-26_224947_1756228805275_rpm7bu.png",
+        width: 1200,
+        height: 630,
+        alt: "SIH Hub - Smart India Hackathon Problem Statements",
+      },
+    ],
+  }
 };
 
 export default function RootLayout({

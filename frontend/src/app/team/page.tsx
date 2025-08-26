@@ -19,7 +19,7 @@ const TeamComingSoon = () => {
               Team Management
             </CardTitle>
             <CardDescription className="text-lg text-gray-600">
-              Coming Soon to SIHconnect
+              Coming Soon to SIH Hub
             </CardDescription>
           </CardHeader>
           
