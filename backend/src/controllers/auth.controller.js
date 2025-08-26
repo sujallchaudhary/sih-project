@@ -150,6 +150,7 @@ const getCurrentUser = async (req, res) => {
 
         // Get full user details
         const fullUser = await User.findOne({ firebaseUid: user.uid }).select('-__v');
+        const isInTeam = fullUser.teamId ? true : false;
 
         if (!fullUser) {
             return res.status(404).json({
@@ -168,6 +169,7 @@ const getCurrentUser = async (req, res) => {
                     name: fullUser.name,
                     email: fullUser.email,
                     photoURL: fullUser.photoURL,
+                    isInTeam,
                     lastLoginAt: fullUser.lastLoginAt,
                     createdAt: fullUser.createdAt,
                 }

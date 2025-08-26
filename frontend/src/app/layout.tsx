@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Navigation } from "@/components/Navigation";
-import Footer from "@/components/Footer";
-import { ThemeProvider } from "@/components/theme-provider";
-import { AuthProvider } from "@/contexts/AuthContext";
 import "./globals.css";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,8 +15,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SIH Hub - Smart India Hackathon Platform",
-  description: "Your one-stop platform for Smart India Hackathon. Discover problem statements, form teams, and access learning resources.",
+  title: "SIH Hub",
+  description: "Explore Smart India Hackathon problem statements and find your next innovative challenge.",
+  openGraph:{
+    title: "SIH Hub",
+    description: "Explore Smart India Hackathon problem statements and find your next innovative challenge.",
+    url: "https://sihhub.vercel.app",
+    siteName: "SIH Hub",
+    images: [
+      {
+        url: "https://hajiriresource.blob.core.windows.net/drive/6855a16b063f65d55faa775e/1756228805275-Screenshot_2025-08-26_224947_1756228805275_rpm7bu.png",
+        width: 1200,
+        height: 630,
+        alt: "SIH Hub",
+      },
+    ],
+    locale: "en-US",
+    type: "website",
+  }
 };
 
 export default function RootLayout({
@@ -27,22 +41,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <Navigation />
-            {children}
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
             <Footer />
-          </AuthProvider>
-        </ThemeProvider>
+          </div>
       </body>
     </html>
   );
