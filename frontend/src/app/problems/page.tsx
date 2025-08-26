@@ -240,10 +240,10 @@ const ProblemsPage = () => {
         </div>
 
         {/* Search and Filter Bar */}
-        <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-6 mb-8">
           <div className="flex flex-col gap-4">
             {/* Search and Quick Filters in one line */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               {/* Search */}
               <div className="flex-1">
                 <Label htmlFor="search" className="sr-only">Search</Label>
@@ -254,15 +254,15 @@ const ProblemsPage = () => {
                     placeholder="Search problem statements..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-10 sm:h-auto"
                   />
                 </div>
               </div>
 
               {/* Quick Filters */}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-full sm:w-40">
+                  <SelectTrigger className="w-full sm:w-36">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -276,8 +276,8 @@ const ProblemsPage = () => {
                 </Select>
 
                 <Select value={selectedDifficulty} onValueChange={setSelectedDifficulty}>
-                  <SelectTrigger className="w-full sm:w-32">
-                    <SelectValue placeholder="Difficulty" />
+                  <SelectTrigger className="w-full sm:w-28">
+                    <SelectValue placeholder="Level" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Levels</SelectItem>
@@ -292,9 +292,10 @@ const ProblemsPage = () => {
                 {/* Advanced Filters */}
                 <Sheet>
                   <SheetTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto">
+                    <Button variant="outline" className="w-full sm:w-auto whitespace-nowrap">
                       <Filter className="h-4 w-4 mr-2" />
-                      More Filters
+                      <span className="hidden sm:inline">More Filters</span>
+                      <span className="sm:hidden">Filters</span>
                     </Button>
                   </SheetTrigger>
                   <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
@@ -527,52 +528,62 @@ const ProblemsPage = () => {
           {(selectedCategory !== 'all' || selectedTheme !== 'all' || selectedOrganization !== 'all' || selectedDepartment !== 'all' || selectedDifficulty !== 'all' || selectedTags.length > 0 || selectedTechStack.length > 0) && (
             <div className="mt-4 space-y-2">
               <span className="text-sm text-gray-600">Active filters:</span>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1 sm:gap-2 max-w-full overflow-hidden">
                 {selectedCategory !== 'all' && (
-                  <Badge variant="secondary" className="cursor-pointer text-xs sm:text-sm" onClick={() => setSelectedCategory('all')}>
-                    Category: {selectedCategory} ×
+                  <Badge variant="secondary" className="cursor-pointer text-xs px-2 py-1 truncate max-w-32 sm:max-w-none" onClick={() => setSelectedCategory('all')}>
+                    Cat: {selectedCategory} ×
                   </Badge>
                 )}
                 {selectedTheme !== 'all' && (
-                  <Badge variant="secondary" className="cursor-pointer text-xs sm:text-sm" onClick={() => setSelectedTheme('all')}>
-                    Theme: {selectedTheme} ×
+                  <Badge variant="secondary" className="cursor-pointer text-xs px-2 py-1 truncate max-w-32 sm:max-w-none" onClick={() => setSelectedTheme('all')}>
+                    Theme: {selectedTheme.length > 15 ? selectedTheme.substring(0, 15) + '...' : selectedTheme} ×
                   </Badge>
                 )}
                 {selectedOrganization !== 'all' && (
-                  <Badge variant="secondary" className="cursor-pointer text-xs sm:text-sm" onClick={() => setSelectedOrganization('all')}>
-                    Org: {selectedOrganization} ×
+                  <Badge variant="secondary" className="cursor-pointer text-xs px-2 py-1 truncate max-w-32 sm:max-w-none" onClick={() => setSelectedOrganization('all')}>
+                    Org: {selectedOrganization.length > 15 ? selectedOrganization.substring(0, 15) + '...' : selectedOrganization} ×
                   </Badge>
                 )}
                 {selectedDepartment !== 'all' && (
-                  <Badge variant="secondary" className="cursor-pointer text-xs sm:text-sm" onClick={() => setSelectedDepartment('all')}>
-                    Dept: {selectedDepartment} ×
+                  <Badge variant="secondary" className="cursor-pointer text-xs px-2 py-1 truncate max-w-32 sm:max-w-none" onClick={() => setSelectedDepartment('all')}>
+                    Dept: {selectedDepartment.length > 15 ? selectedDepartment.substring(0, 15) + '...' : selectedDepartment} ×
                   </Badge>
                 )}
                 {selectedDifficulty !== 'all' && (
-                  <Badge variant="secondary" className="cursor-pointer text-xs sm:text-sm" onClick={() => setSelectedDifficulty('all')}>
-                    Difficulty: {selectedDifficulty} ×
+                  <Badge variant="secondary" className="cursor-pointer text-xs px-2 py-1" onClick={() => setSelectedDifficulty('all')}>
+                    {selectedDifficulty} ×
                   </Badge>
                 )}
-                {selectedTags.map((tag) => (
+                {selectedTags.slice(0, 3).map((tag) => (
                   <Badge 
                     key={tag} 
                     variant="secondary" 
-                    className="cursor-pointer text-xs sm:text-sm" 
+                    className="cursor-pointer text-xs px-2 py-1 truncate max-w-24 sm:max-w-none" 
                     onClick={() => setSelectedTags(selectedTags.filter(t => t !== tag))}
                   >
-                    Tag: {tag} ×
+                    {tag.length > 10 ? tag.substring(0, 10) + '...' : tag} ×
                   </Badge>
                 ))}
-                {selectedTechStack.map((tech) => (
+                {selectedTags.length > 3 && (
+                  <Badge variant="secondary" className="text-xs px-2 py-1">
+                    +{selectedTags.length - 3} tags
+                  </Badge>
+                )}
+                {selectedTechStack.slice(0, 2).map((tech) => (
                   <Badge 
                     key={tech} 
                     variant="secondary" 
-                    className="cursor-pointer text-xs sm:text-sm" 
+                    className="cursor-pointer text-xs px-2 py-1 truncate max-w-24 sm:max-w-none" 
                     onClick={() => setSelectedTechStack(selectedTechStack.filter(t => t !== tech))}
                   >
-                    Tech: {tech} ×
+                    {tech.length > 10 ? tech.substring(0, 10) + '...' : tech} ×
                   </Badge>
                 ))}
+                {selectedTechStack.length > 2 && (
+                  <Badge variant="secondary" className="text-xs px-2 py-1">
+                    +{selectedTechStack.length - 2} tech
+                  </Badge>
+                )}
               </div>
             </div>
           )}
@@ -582,12 +593,14 @@ const ProblemsPage = () => {
         {filters?.popular?.tags && (
           <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Popular Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {filters.popular.tags.slice(0, 12).map((tag) => (
+            <div className="flex flex-wrap gap-1 sm:gap-2">
+              {filters.popular.tags.slice(0, 10).map((tag, index) => (
                 <Badge
                   key={tag}
                   variant={selectedTags.includes(tag) ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-blue-100 text-xs sm:text-sm"
+                  className={`cursor-pointer hover:bg-blue-100 text-xs px-2 py-1 whitespace-nowrap ${
+                    index >= 6 ? 'hidden sm:inline-flex' : ''
+                  }`}
                   onClick={() => {
                     if (selectedTags.includes(tag)) {
                       setSelectedTags(selectedTags.filter(t => t !== tag));
@@ -607,12 +620,14 @@ const ProblemsPage = () => {
         {filters?.popular?.techStack && (
           <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Popular Technologies</h3>
-            <div className="flex flex-wrap gap-2">
-              {filters.popular.techStack.slice(0, 12).map((tech) => (
+            <div className="flex flex-wrap gap-1 sm:gap-2">
+              {filters.popular.techStack.slice(0, 8).map((tech, index) => (
                 <Badge
                   key={tech}
                   variant={selectedTechStack.includes(tech) ? "default" : "outline"}
-                  className="cursor-pointer hover:bg-blue-100 text-xs sm:text-sm"
+                  className={`cursor-pointer hover:bg-blue-100 text-xs px-2 py-1 whitespace-nowrap ${
+                    index >= 4 ? 'hidden sm:inline-flex' : ''
+                  }`}
                   onClick={() => {
                     if (selectedTechStack.includes(tech)) {
                       setSelectedTechStack(selectedTechStack.filter(t => t !== tech));
@@ -621,7 +636,7 @@ const ProblemsPage = () => {
                     }
                   }}
                 >
-                  {tech}
+                  {tech.length > 12 ? tech.substring(0, 12) + '...' : tech}
                 </Badge>
               ))}
             </div>
