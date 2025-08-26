@@ -49,7 +49,7 @@ class AuthService {
       
       // Store the ID token in cookies
       Cookies.set('idToken', idToken, { 
-        expires: 1, // 1 day
+        expires: 7,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
       });
@@ -151,7 +151,7 @@ class AuthService {
       if (firebaseUser) {
         const idToken = await firebaseUser.getIdToken(true); // Force refresh
         Cookies.set('idToken', idToken, { 
-          expires: 1,
+          expires: 7, // 7 days - matches Firebase refresh token behavior
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict'
         });
