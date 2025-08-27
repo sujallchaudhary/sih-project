@@ -83,14 +83,15 @@ const getAllProblemStatements = async (req, res) => {
             filter.id = { $in: includeArray };
         }
 
-        // Sorting options
         let sortOptions = {};
         if (req.query.sortBy) {
             const sortField = req.query.sortBy;
             const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
             sortOptions[sortField] = sortOrder;
+            sortOptions._id = sortOrder;
         } else {
             sortOptions.createdAt = -1;
+            sortOptions._id = -1;
         }
 
         // Execute query with pagination
@@ -522,8 +523,12 @@ const getTeamProblemStatements = async (req, res) => {
             const sortField = req.query.sortBy;
             const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
             sortOptions[sortField] = sortOrder;
+            // Add _id as secondary sort to ensure consistent pagination
+            sortOptions._id = sortOrder;
         } else {
+            // Default sort by createdAt descending, then by _id for consistency
             sortOptions.createdAt = -1;
+            sortOptions._id = -1;
         }
 
         // Execute query with pagination
@@ -683,8 +688,12 @@ const getBookmarkedProblemStatements = async (req, res) => {
             const sortField = req.query.sortBy;
             const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1;
             sortOptions[sortField] = sortOrder;
+            // Add _id as secondary sort to ensure consistent pagination
+            sortOptions._id = sortOrder;
         } else {
+            // Default sort by createdAt descending, then by _id for consistency
             sortOptions.createdAt = -1;
+            sortOptions._id = -1;
         }
 
         // Execute query with pagination
