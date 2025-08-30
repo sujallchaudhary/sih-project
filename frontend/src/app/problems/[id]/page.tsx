@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import BookmarkButton from '@/components/BookmarkButton';
+import AddToTeamButton from '@/components/AddToTeamButton';
 import { 
   ArrowLeft, 
   Building, 
@@ -128,11 +129,10 @@ const ProblemDetailPage = () => {
             </div>
             <div className="flex flex-col items-start lg:items-end gap-2">
               <div className="flex items-center gap-2">
-                <BookmarkButton 
-                  psId={problem._id} 
-                  isBookmarked={problem.isBookmarked}
-                  showText 
-                />
+                 <BookmarkButton 
+              psId={problem._id} 
+              isBookmarked={problem.isBookmarked}
+            />
                 <Badge 
                   variant={problem.difficultyLevel === 'hard' ? 'destructive' : 'secondary'}
                   className="text-sm"
@@ -203,6 +203,11 @@ const ProblemDetailPage = () => {
                 </a>
               </Button>
             )}
+            <AddToTeamButton 
+              psId={problem._id} 
+              isAddedToTeam={problem.isAddedToTeam}
+            />
+
           </div>
         </div>
 

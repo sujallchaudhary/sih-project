@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { UserPlus, UserCheck } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useAuthDialog } from '@/hooks/useAuthDialog';
+import AuthDialog from './AuthDialog';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -25,8 +25,7 @@ const AddToTeamButton: React.FC<AddToTeamButtonProps> = ({
   className = '',
   showText = true,
 }) => {
-  const { user } = useAuth();
-  const { openAuthDialog } = useAuthDialog();
+  const { showAuthDialog, closeAuthDialog, requireAuth } = useAuthDialog();
   const [isAddedToTeam, setIsAddedToTeam] = useState(initialAddedToTeam);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,50 +34,52 @@ const AddToTeamButton: React.FC<AddToTeamButtonProps> = ({
     setIsAddedToTeam(initialAddedToTeam);
   }, [initialAddedToTeam]);
 
+  const handleLoginSuccess = () => {
+    // After successful login, the user can retry the team action
+    closeAuthDialog();
+  };
+
   const handleToggleTeam = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent event bubbling
 
-    if (!user) {
-      openAuthDialog();
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      if (isAddedToTeam) {
-        // Remove from team
-        const response = await api.delete('/ps/team', { data: { psId } });
-        if (response.data.success) {
-          setIsAddedToTeam(false);
-          toast.success('Problem statement removed from team!');
+    requireAuth(async () => {
+      setIsLoading(true);
+      try {
+        if (isAddedToTeam) {
+          // Remove from team
+          const response = await api.delete('/ps/team', { data: { psId } });
+          if (response.data.success) {
+            setIsAddedToTeam(false);
+            toast.success('Problem statement removed from team!');
+          } else {
+            toast.error(response.data.message || 'Failed to remove problem statement');
+          }
         } else {
-          toast.error(response.data.message || 'Failed to remove problem statement');
+          // Add to team
+          const response = await api.post('/ps/team', { psId });
+          if (response.data.success) {
+            setIsAddedToTeam(true);
+            toast.success('Problem statement added to team!');
+          } else {
+            toast.error(response.data.message || 'Failed to add problem statement');
+          }
         }
-      } else {
-        // Add to team
-        const response = await api.post('/ps/team', { psId });
-        if (response.data.success) {
-          setIsAddedToTeam(true);
-          toast.success('Problem statement added to team!');
-        } else {
-          toast.error(response.data.message || 'Failed to add problem statement');
-        }
-      }
-    } catch (error: unknown) {
-      console.error('Error toggling team status:', error);
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
-        if (axiosError.response?.status === 400) {
-          toast.error(axiosError.response.data?.message || 'Operation failed');
+      } catch (error: unknown) {
+        console.error('Error toggling team status:', error);
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
+          if (axiosError.response?.status === 400) {
+            toast.error(axiosError.response.data?.message || 'Operation failed');
+          } else {
+            toast.error('Failed to update team status');
+          }
         } else {
           toast.error('Failed to update team status');
         }
-      } else {
-        toast.error('Failed to update team status');
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   const buttonText = () => {
@@ -91,20 +92,32 @@ const AddToTeamButton: React.FC<AddToTeamButtonProps> = ({
   const IconComponent = isAddedToTeam ? UserCheck : UserPlus;
 
   return (
-    <Button
-      onClick={handleToggleTeam}
-      disabled={isLoading}
-      variant={buttonVariant}
-      size={size}
-      className={className}
-    >
-      <IconComponent className="h-4 w-4" />
-      {showText && (
-        <span className="ml-2">
-          {buttonText()}
-        </span>
-      )}
-    </Button>
+    <>
+      <Button
+        onClick={handleToggleTeam}
+        disabled={isLoading}
+        variant={buttonVariant}
+        size={size}
+        className={className}
+        title={buttonText()}
+      >
+        <IconComponent className="h-4 w-4" />
+        {showText && (
+          <span className="ml-2">
+            {buttonText()}
+          </span>
+        )}
+      </Button>
+
+      <AuthDialog
+        open={showAuthDialog}
+        onOpenChange={closeAuthDialog}
+        onSuccess={handleLoginSuccess}
+        feature="team"
+        title="Sign in to Add to Team"
+        description="Please sign in to add problem statements to your team and collaborate with others."
+      />
+    </>
   );
 };
 
