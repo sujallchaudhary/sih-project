@@ -133,24 +133,40 @@ const BookmarksPage = () => {
   const [bookmarkedProblems, setBookmarkedProblems] = useState<ProblemStatement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  const itemsPerPage = 12;
 
   useEffect(() => {
     if (user) {
-      fetchBookmarkedProblems();
+      fetchBookmarkedProblems(1);
     } else if (!authLoading) {
       setLoading(false);
     }
   }, [user, authLoading]);
 
-  const fetchBookmarkedProblems = async () => {
+  const fetchBookmarkedProblems = async (page = 1) => {
     setLoading(true);
     setError(null);
     try {
       const response = await apiService.getBookmarkedProblemStatements({
-        page: 1,
-        limit: 50 // Load more items for bookmarks page
+        page: page,
+        limit: itemsPerPage
       });
       setBookmarkedProblems(response.data);
+      
+      // Update pagination state
+      const pagination = response.pagination;
+      setCurrentPage(pagination.currentPage);
+      setTotalPages(pagination.totalPages);
+      setTotalCount(pagination.totalCount);
+      setHasNextPage(pagination.hasNextPage);
+      setHasPrevPage(pagination.hasPrevPage);
     } catch (error) {
       console.error('Error fetching bookmarked problems:', error);
       setError('Failed to load bookmarked problems');
@@ -215,7 +231,7 @@ const BookmarksPage = () => {
                 Error Loading Bookmarks
               </h2>
               <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={fetchBookmarkedProblems}>
+              <Button onClick={() => fetchBookmarkedProblems(1)}>
                 Try Again
               </Button>
             </div>
@@ -259,7 +275,7 @@ const BookmarksPage = () => {
             {/* Stats */}
             <div className="mb-6">
               <p className="text-sm text-gray-600">
-                {bookmarkedProblems.length} bookmarked problem statement{bookmarkedProblems.length !== 1 ? 's' : ''}
+                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} bookmarked problem statement{totalCount !== 1 ? 's' : ''}
               </p>
             </div>
 
@@ -273,6 +289,60 @@ const BookmarksPage = () => {
                 />
               ))}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchBookmarkedProblems(currentPage - 1)}
+                    disabled={!hasPrevPage || loading}
+                  >
+                    Previous
+                  </Button>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNumber;
+                      if (totalPages <= 5) {
+                        pageNumber = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNumber = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNumber = totalPages - 4 + i;
+                      } else {
+                        pageNumber = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={pageNumber}
+                          variant={currentPage === pageNumber ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => fetchBookmarkedProblems(pageNumber)}
+                          disabled={loading}
+                          className="w-8 h-8 p-0"
+                        >
+                          {pageNumber}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fetchBookmarkedProblems(currentPage + 1)}
+                    disabled={!hasNextPage || loading}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

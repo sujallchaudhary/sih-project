@@ -104,6 +104,14 @@ export default function TeamPage() {
   const [isCurrentUserLeader, setIsCurrentUserLeader] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
+  // Pagination state for team problems
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalCount, setTotalCount] = useState(0)
+  const [hasNextPage, setHasNextPage] = useState(false)
+  const [hasPrevPage, setHasPrevPage] = useState(false)
+  const itemsPerPage = 10
+
   // New state for additional team management features
   const [showUpdateTeamDialog, setShowUpdateTeamDialog] = useState(false)
   const [showDeleteTeamDialog, setShowDeleteTeamDialog] = useState(false)
@@ -271,13 +279,21 @@ export default function TeamPage() {
     }
   }
 
-  const fetchTeamProblems = useCallback(async () => {
+  const fetchTeamProblems = useCallback(async (page = 1) => {
     if (!team) return
     setProblemsLoading(true)
     try {
-      const response = await api.get('/ps/team')
+      const response = await api.get(`/ps/team?page=${page}&limit=${itemsPerPage}`)
       if (response.data.success) {
         setTeamProblems(response.data.data)
+        
+        // Update pagination state
+        const pagination = response.data.pagination
+        setCurrentPage(pagination.currentPage)
+        setTotalPages(pagination.totalPages)
+        setTotalCount(pagination.totalCount)
+        setHasNextPage(pagination.hasNextPage)
+        setHasPrevPage(pagination.hasPrevPage)
       }
     } catch (error: unknown) {
       console.error('Error fetching team problems:', error)
@@ -285,7 +301,7 @@ export default function TeamPage() {
     } finally {
       setProblemsLoading(false)
     }
-  }, [team])
+  }, [team, itemsPerPage])
 
   const handleJoinTeam = async () => {
     if (!joinTeamId.trim()) {
@@ -491,14 +507,16 @@ export default function TeamPage() {
 
   useEffect(() => {
     if (team && activeTab === 'problems') {
-      fetchTeamProblems()
+      setCurrentPage(1) // Reset to first page when switching tabs
+      fetchTeamProblems(1)
     }
   }, [team, activeTab, fetchTeamProblems])
 
   // Fetch problems immediately when team is loaded since problems is the default tab
   useEffect(() => {
     if (team) {
-      fetchTeamProblems()
+      setCurrentPage(1) // Reset to first page when team changes
+      fetchTeamProblems(1)
     }
   }, [team, fetchTeamProblems])
 
@@ -846,11 +864,67 @@ export default function TeamPage() {
                   </Link>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
-                  {teamProblems.map((problem) => (
-                    <ProblemCard key={problem._id} problem={problem} />
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+                    {teamProblems.map((problem) => (
+                      <ProblemCard key={problem._id} problem={problem} />
+                    ))}
+                  </div>
+                  
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-6 border-t">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} problem statements
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchTeamProblems(currentPage - 1)}
+                          disabled={!hasPrevPage || problemsLoading}
+                        >
+                          Previous
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                            let pageNumber;
+                            if (totalPages <= 5) {
+                              pageNumber = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNumber = i + 1;
+                            } else if (currentPage >= totalPages - 2) {
+                              pageNumber = totalPages - 4 + i;
+                            } else {
+                              pageNumber = currentPage - 2 + i;
+                            }
+                            
+                            return (
+                              <Button
+                                key={pageNumber}
+                                variant={currentPage === pageNumber ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => fetchTeamProblems(pageNumber)}
+                                disabled={problemsLoading}
+                                className="w-8 h-8 p-0"
+                              >
+                                {pageNumber}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fetchTeamProblems(currentPage + 1)}
+                          disabled={!hasNextPage || problemsLoading}
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>

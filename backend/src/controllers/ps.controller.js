@@ -114,7 +114,8 @@ const getAllProblemStatements = async (req, res) => {
             // Get team choices
             const teamChoices = await ChoosenPs.find({
                 userId: req.user.mongoId,
-                problemStatementId: { $in: problemStatements.map(ps => ps._id) }
+                problemStatementId: { $in: problemStatements.map(ps => ps._id) },
+                isDeleted: { $ne: true }
             }).lean();
 
             const bookmarkMap = new Map(bookmarks.map(bookmark => [bookmark.problemStatementId.toString(), true]));
@@ -201,7 +202,8 @@ const getProblemStatementById = async (req, res) => {
 
             const teamChoice = await ChoosenPs.findOne({
                 userId: req.user.mongoId,
-                problemStatementId: problemStatement._id
+                problemStatementId: problemStatement._id,
+                isDeleted: { $ne: true }
             });
             isAddedToTeam = !!teamChoice;
         }
@@ -484,7 +486,8 @@ const getTeamProblemStatements = async (req, res) => {
 
         // Apply additional filters if provided
         const filter = {
-            _id: { $in: teamPsIds }
+            _id: { $in: teamPsIds },
+            isDeleted: { $ne: true }
         };
 
         if (req.query.category) {
@@ -538,6 +541,15 @@ const getTeamProblemStatements = async (req, res) => {
             .limit(limit)
             .lean();
 
+        // Add bookmark information for each problem statement
+        const bookmarks = await Bookmark.find({
+            userId: mongoId,
+            problemStatementId: { $in: problemStatements.map(ps => ps._id) },
+            isDeleted: { $ne: true }
+        }).lean();
+
+        const bookmarkMap = new Map(bookmarks.map(bookmark => [bookmark.problemStatementId.toString(), true]));
+
         // Add team context to each problem statement
         const problemStatementsWithTeamContext = problemStatements.map(ps => {
             const psChoices = teamPsChoices.filter(choice => 
@@ -550,8 +562,8 @@ const getTeamProblemStatements = async (req, res) => {
             
             return {
                 ...ps,
-                isBookmarked: false, // We can add bookmark check here if needed
-                isAddedToTeam: isChosenByCurrentUser, // Add this property for consistency
+                isBookmarked: bookmarkMap.has(ps._id.toString()) || false,
+                isAddedToTeam: isChosenByCurrentUser,
                 teamContext: {
                     chosenBy: psChoices.map(choice => ({
                         userId: choice.userId._id,
@@ -644,7 +656,8 @@ const getBookmarkedProblemStatements = async (req, res) => {
 
         // Apply additional filters if provided
         const filter = {
-            _id: { $in: bookmarkedPsIds }
+            _id: { $in: bookmarkedPsIds },
+            isDeleted: { $ne: true }
         };
 
         if (req.query.category) {
@@ -709,7 +722,8 @@ const getBookmarkedProblemStatements = async (req, res) => {
         // Add isBookmarked: true and check isAddedToTeam for all results since these are bookmarked
         const teamChoices = await ChoosenPs.find({
             userId: mongoId,
-            problemStatementId: { $in: problemStatements.map(ps => ps._id) }
+            problemStatementId: { $in: problemStatements.map(ps => ps._id) },
+            isDeleted: { $ne: true }
         }).lean();
 
         const teamChoiceMap = new Map(teamChoices.map(choice => [choice.problemStatementId.toString(), true]));
