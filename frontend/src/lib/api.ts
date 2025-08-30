@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { auth } from './firebase';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -18,6 +19,55 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Add response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If we get a 401 and haven't already tried to refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh the token
+        const firebaseUser = auth.currentUser;
+        if (firebaseUser) {
+          const newToken = await firebaseUser.getIdToken(true);
+          
+          // Update the cookie
+          Cookies.set('idToken', newToken, { 
+            expires: 1,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict'
+          });
+
+          // Update the original request with new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          
+          // Retry the original request
+          return api(originalRequest);
+        } else {
+          // No Firebase user, redirect to login
+          Cookies.remove('idToken');
+          if (typeof window !== 'undefined') {
+            window.location.href = '/';
+          }
+        }
+      } catch (refreshError) {
+        // Refresh failed, redirect to login
+        console.error('Token refresh failed:', refreshError);
+        Cookies.remove('idToken');
+        if (typeof window !== 'undefined') {
+          window.location.href = '/';
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export interface FilterOptions {
   categories: string[];

@@ -37,6 +37,12 @@ export interface CurrentUserResponse {
 
 class AuthService {
   private currentUser: AuthUser | null = null;
+  private refreshTimeout: NodeJS.Timeout | null = null;
+
+  constructor() {
+    // Set up automatic token refresh
+    this.setupTokenRefresh();
+  }
 
   // Sign in with Google
   async signInWithGoogle(): Promise<AuthUser | null> {
@@ -47,9 +53,9 @@ class AuthService {
       // Get the ID token
       const idToken = await user.getIdToken();
       
-      // Store the ID token in cookies
+      // Store the ID token in cookies with shorter expiry
       Cookies.set('idToken', idToken, { 
-        expires: 7,
+        expires: 1, // 1 day instead of 7 days
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict'
       });
@@ -79,6 +85,7 @@ class AuthService {
       await firebaseSignOut(auth);
       Cookies.remove('idToken');
       this.currentUser = null;
+      this.clearTokenRefresh(); // Clear the refresh timer
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
@@ -151,7 +158,7 @@ class AuthService {
       if (firebaseUser) {
         const idToken = await firebaseUser.getIdToken(true); // Force refresh
         Cookies.set('idToken', idToken, { 
-          expires: 7, // 7 days - matches Firebase refresh token behavior
+          expires: 1, // 1 day - reasonable for web apps
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict'
         });
@@ -161,6 +168,59 @@ class AuthService {
     } catch (error) {
       console.error('Token refresh error:', error);
       return null;
+    }
+  }
+
+  // Setup automatic token refresh
+  private setupTokenRefresh(): void {
+    // Clear any existing timeout
+    if (this.refreshTimeout) {
+      clearTimeout(this.refreshTimeout);
+    }
+
+    // Set up token refresh every 50 minutes (before 1-hour expiry)
+    const refreshInterval = 50 * 60 * 1000; // 50 minutes in milliseconds
+    
+    this.refreshTimeout = setInterval(async () => {
+      if (auth.currentUser && this.isAuthenticated()) {
+        try {
+          await this.refreshToken();
+          console.log('Token refreshed automatically');
+        } catch (error) {
+          console.error('Automatic token refresh failed:', error);
+        }
+      }
+    }, refreshInterval);
+  }
+
+  // Clear token refresh
+  private clearTokenRefresh(): void {
+    if (this.refreshTimeout) {
+      clearInterval(this.refreshTimeout);
+      this.refreshTimeout = null;
+    }
+  }
+
+  // Enhanced getCurrentUser with token refresh on 401
+  async getCurrentUserWithRetry(): Promise<AuthUser | null> {
+    try {
+      return await this.getCurrentUser();
+    } catch (error) {
+      // If we get a 401, try refreshing the token once
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        try {
+          const newToken = await this.refreshToken();
+          if (newToken) {
+            // Retry the request with the new token
+            return await this.getCurrentUser();
+          }
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+          // Force sign out if refresh fails
+          await this.signOut();
+        }
+      }
+      throw error;
     }
   }
 }

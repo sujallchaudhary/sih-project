@@ -54,8 +54,9 @@ const authenticateFirebaseToken = async (req, res, next) => {
         if (error.code === 'auth/id-token-expired') {
             return res.status(401).json({
                 success: false,
-                message: 'Token has expired. Please sign in again.',
-                code: 'TOKEN_EXPIRED'
+                message: 'Token has expired. Please refresh your session.',
+                code: 'TOKEN_EXPIRED',
+                shouldRefresh: true
             });
         }
 
@@ -63,7 +64,8 @@ const authenticateFirebaseToken = async (req, res, next) => {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid token. Please sign in again.',
-                code: 'INVALID_TOKEN'
+                code: 'INVALID_TOKEN',
+                shouldRefresh: false
             });
         }
 

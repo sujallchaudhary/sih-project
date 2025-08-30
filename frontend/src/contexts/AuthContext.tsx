@@ -26,11 +26,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const initializeAuth = async () => {
       try {
         if (authService.isAuthenticated()) {
-          const currentUser = await authService.getCurrentUser();
+          const currentUser = await authService.getCurrentUserWithRetry();
           setUser(currentUser);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        // Clear invalid tokens
+        await authService.signOut();
       } finally {
         setLoading(false);
       }
@@ -39,8 +41,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
 
     // Listen to auth state changes
-    const unsubscribe = authService.onAuthStateChanged((authUser) => {
-      setUser(authUser);
+    const unsubscribe = authService.onAuthStateChanged(async (authUser) => {
+      if (authUser) {
+        // Verify the user data is still valid
+        try {
+          const currentUser = await authService.getCurrentUserWithRetry();
+          setUser(currentUser);
+        } catch (error) {
+          console.error('Auth state change error:', error);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
@@ -76,10 +89,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const refreshUser = async (): Promise<void> => {
     try {
-      const currentUser = await authService.getCurrentUser();
+      const currentUser = await authService.getCurrentUserWithRetry();
       setUser(currentUser);
     } catch (error) {
       console.error('Refresh user error:', error);
+      // If refresh fails, sign out
+      await authService.signOut();
+      setUser(null);
     }
   };
 
