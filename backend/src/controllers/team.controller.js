@@ -85,18 +85,56 @@ const leaveTeam = async(req,res)=>{
                 message: 'User is not in a team',
             });
         }
-        if(checkUserTeam.teamId.leaderId.toString() === mongoId){
-            return res.status(400).json({
-                success: false,
-                message: 'Team leader cannot leave the team. Please delete the team or transfer leadership.',
+
+        const isLeader = checkUserTeam.teamId.leaderId.toString() === mongoId.toString();
+        
+        if(isLeader) {
+            // If leader is leaving, we need to handle leadership transfer or team deletion
+            const teamMembers = await User.find({
+                teamId: checkUserTeam.teamId._id,
+                _id: { $ne: mongoId } // Exclude the current leader
+            }).select('_id name email photoURL createdAt').lean();
+
+            if(teamMembers.length === 0) {
+                // No other members, delete the team
+                await Team.findByIdAndUpdate(checkUserTeam.teamId._id, {isDeleted: true});
+                await User.findByIdAndUpdate(mongoId, {teamId: null});
+                return res.status(200).json({
+                    success: true,
+                    message: 'Team deleted successfully as you were the only member',
+                    action: 'team_deleted'
+                });
+            } else {
+                // Transfer leadership to the oldest member (first to join)
+                const newLeader = teamMembers.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0];
+                
+                await Team.findByIdAndUpdate(checkUserTeam.teamId._id, {
+                    leaderId: newLeader._id,
+                    $inc: {teamSize: -1}
+                });
+                await User.findByIdAndUpdate(mongoId, {teamId: null});
+                
+                return res.status(200).json({
+                    success: true,
+                    message: `Leadership transferred to ${newLeader.name} and you left the team successfully`,
+                    action: 'leadership_transferred',
+                    newLeader: {
+                        id: newLeader._id,
+                        name: newLeader.name,
+                        email: newLeader.email
+                    }
+                });
+            }
+        } else {
+            // Regular member leaving
+            await User.findByIdAndUpdate(mongoId, {teamId: null});
+            await Team.findByIdAndUpdate(checkUserTeam.teamId, {$inc: {teamSize: -1}});
+            return res.status(200).json({
+                success: true,
+                message: 'User left team successfully',
+                action: 'member_left'
             });
         }
-        await User.findByIdAndUpdate(mongoId, {teamId: null});
-        await Team.findByIdAndUpdate(checkUserTeam.teamId, {$inc: {teamSize: -1}});
-        return res.status(200).json({
-            success: true,
-            message: 'User left team successfully',
-        });
     } catch (error) {
         return res.status(500).json({
             success:false,
@@ -118,7 +156,7 @@ const removeUserFromTeam = async(req,res)=>{
             });
         }
         const checkLeaderTeam = await User.findById(mongoId).populate('teamId');
-        if(checkLeaderTeam.teamId && checkLeaderTeam.teamId.leaderId.toString() === mongoId){
+        if(checkLeaderTeam.teamId && checkLeaderTeam.teamId.leaderId.toString() === mongoId.toString()){
             return res.status(400).json({
                 success: false,
                 message: 'Team leader cannot remove a user from the team.',
@@ -149,7 +187,7 @@ const deleteTeam = async(req,res)=>{
                 message: 'User is not in a team',
             });
         }
-        if(checkUserTeam.teamId.leaderId.toString() !== mongoId){
+        if(checkUserTeam.teamId.leaderId.toString() !== mongoId.toString()){
             return res.status(400).json({
                 success: false,
                 message: 'Only team leader can delete the team',
@@ -260,7 +298,7 @@ const transferLeadership = async(req, res) => {
                 message: 'User is not in a team',
             });
         }
-        if (currentUser.teamId.leaderId.toString() !== mongoId) {
+        if (currentUser.teamId.leaderId.toString() !== mongoId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: 'Only team leader can transfer leadership',
@@ -314,7 +352,7 @@ const updateTeam = async(req, res) => {
             });
         }
 
-        if (user.teamId.leaderId.toString() !== mongoId) {
+        if (user.teamId.leaderId.toString() !== mongoId.toString()) {
             return res.status(403).json({
                 success: false,
                 message: 'Only team leader can update team information',

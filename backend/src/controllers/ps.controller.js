@@ -544,9 +544,14 @@ const getTeamProblemStatements = async (req, res) => {
                 choice.problemStatementId.toString() === ps._id.toString()
             );
             
+            const isChosenByCurrentUser = psChoices.some(choice => 
+                choice.userId._id.toString() === mongoId.toString()
+            );
+            
             return {
                 ...ps,
                 isBookmarked: false, // We can add bookmark check here if needed
+                isAddedToTeam: isChosenByCurrentUser, // Add this property for consistency
                 teamContext: {
                     chosenBy: psChoices.map(choice => ({
                         userId: choice.userId._id,
@@ -556,9 +561,7 @@ const getTeamProblemStatements = async (req, res) => {
                         chosenAt: choice.createdAt
                     })),
                     chosenCount: psChoices.length,
-                    isChosenByCurrentUser: psChoices.some(choice => 
-                        choice.userId._id.toString() === mongoId
-                    )
+                    isChosenByCurrentUser: isChosenByCurrentUser
                 }
             };
         });

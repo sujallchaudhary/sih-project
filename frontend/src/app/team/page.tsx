@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthDialog } from '@/hooks/useAuthDialog'
 import AuthDialog from '@/components/AuthDialog'
+import AddToTeamButton from '@/components/AddToTeamButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,7 +15,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { Users, UserPlus, Crown, UserMinus, ExternalLink, Calendar, Copy, Check, Plus } from 'lucide-react'
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select'
+import { 
+  Users, 
+  UserPlus, 
+  Crown, 
+  UserMinus, 
+  ExternalLink, 
+  Calendar, 
+  Copy, 
+  Check, 
+  Plus, 
+  Trash2, 
+  Edit, 
+  Tag,
+  BookOpen,
+  RotateCcw
+} from 'lucide-react'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 
@@ -47,6 +70,8 @@ interface TeamProblemStatement {
   summary: string
   tags: string[]
   techStack: string[]
+  isBookmarked?: boolean
+  isAddedToTeam?: boolean
   teamContext: {
     chosenBy: Array<{
       userId: string
@@ -77,6 +102,124 @@ export default function TeamPage() {
   const [memberToRemove, setMemberToRemove] = useState<{ id: string; name: string } | null>(null)
   const [linkCopied, setLinkCopied] = useState(false)
   const [isCurrentUserLeader, setIsCurrentUserLeader] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // New state for additional team management features
+  const [showUpdateTeamDialog, setShowUpdateTeamDialog] = useState(false)
+  const [showDeleteTeamDialog, setShowDeleteTeamDialog] = useState(false)
+  const [showTransferLeadershipDialog, setShowTransferLeadershipDialog] = useState(false)
+  const [newTeamName, setNewTeamName] = useState('')
+  const [selectedNewLeader, setSelectedNewLeader] = useState('')
+
+  // Enhanced Problem Card Component
+  const ProblemCard = ({ problem }: { problem: TeamProblemStatement }) => (
+    <Card className="h-full hover:shadow-lg transition-shadow flex flex-col">
+      <CardHeader className="flex-shrink-0 pb-4">
+        <div className="flex justify-between items-start gap-4 mb-3">
+          <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
+            <Badge variant="outline" className="text-xs">{problem.id}</Badge>
+            <Badge className={`text-xs ${
+              problem.difficultyLevel === 'hard' ? 'bg-red-500' : 
+              problem.difficultyLevel === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+            }`}>
+              {problem.difficultyLevel}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <AddToTeamButton 
+              psId={problem._id} 
+              isAddedToTeam={problem.isAddedToTeam || problem.teamContext.isChosenByCurrentUser}
+              size="sm" 
+              variant="ghost" 
+              className="h-8 w-8 p-0"
+              showText={false}
+            />
+            <Link href={`/problems/${problem.id}`}>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+        
+        <CardTitle className="text-lg leading-tight mb-2">{problem.title}</CardTitle>
+        <CardDescription className="text-sm leading-relaxed">{problem.summary}</CardDescription>
+      </CardHeader>
+      
+      <CardContent className="flex-1 flex flex-col">
+        {/* Theme & Category */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Badge variant="outline" className="text-xs">{problem.theme}</Badge>
+          <Badge variant="outline" className="text-xs">{problem.category}</Badge>
+        </div>
+
+        {/* Tags */}
+        <div className="mb-4">
+          <div className="flex items-center mb-2">
+            <Tag className="h-4 w-4 mr-2 text-gray-500" />
+            <span className="text-sm font-medium">Tags</span>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {problem.tags.slice(0, 4).map((tag, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+            {problem.tags.length > 4 && (
+              <Badge variant="secondary" className="text-xs">
+                +{problem.tags.length - 4} more
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Tech Stack */}
+        {problem.techStack && problem.techStack.length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center mb-2">
+              <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
+              <span className="text-sm font-medium">Tech Stack</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {problem.techStack.slice(0, 3).map((tech, index) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {tech}
+                </Badge>
+              ))}
+              {problem.techStack.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{problem.techStack.length - 3} more
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+
+        <Separator className="my-3" />
+
+        {/* Team Context */}
+        <div className="mt-auto">
+          <p className="text-sm font-medium mb-2">
+            Chosen by {problem.teamContext.chosenCount} member{problem.teamContext.chosenCount !== 1 ? 's' : ''}:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {problem.teamContext.chosenBy.map((choice) => (
+              <div key={choice.userId} className="flex items-center gap-2 text-xs bg-muted rounded-full px-3 py-1">
+                <Avatar className="w-4 h-4">
+                  <AvatarImage src={choice.userPhoto} />
+                  <AvatarFallback className="text-xs">{choice.userName.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <span className="truncate max-w-20">{choice.userName}</span>
+                {problem.teamContext.isChosenByCurrentUser && choice.userId === user?.firebaseUid && (
+                  <span className="text-primary">(You)</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
 
   const fetchTeamDetails = async () => {
     try {
@@ -88,6 +231,7 @@ export default function TeamPage() {
         
         // Set leadership status from backend
         setIsCurrentUserLeader(currentUserData.isLeader)
+        setCurrentUserId(currentUserData.id)
         
         // Map the API response structure to what our component expects
         const mappedTeam = {
@@ -197,9 +341,19 @@ export default function TeamPage() {
     try {
       const response = await api.delete('/team/leave')
       if (response.data.success) {
-        toast.success('Left team successfully')
+        const { action, newLeader } = response.data
+        
+        if (action === 'team_deleted') {
+          toast.success('Team deleted successfully as you were the only member')
+        } else if (action === 'leadership_transferred') {
+          toast.success(`Leadership transferred to ${newLeader.name}. You left the team successfully.`)
+        } else {
+          toast.success('Left team successfully')
+        }
+        
         setTeam(null)
         setTeamProblems([])
+        setIsCurrentUserLeader(false)
         setShowLeaveDialog(false)
       }
     } catch (error: unknown) {
@@ -254,6 +408,76 @@ export default function TeamPage() {
       toast.success('Join link copied to clipboard!')
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000) // Reset after 2 seconds
+    }
+  }
+
+  // New team management functions
+  const handleUpdateTeam = async () => {
+    if (!newTeamName.trim()) {
+      toast.error('Please enter a team name')
+      return
+    }
+
+    try {
+      const response = await api.put('/team/update', { name: newTeamName })
+      if (response.data.success) {
+        toast.success('Team name updated successfully')
+        await fetchTeamDetails()
+        setShowUpdateTeamDialog(false)
+        setNewTeamName('')
+      }
+    } catch (error: unknown) {
+      console.error('Error updating team:', error)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } }
+        toast.error(axiosError.response?.data?.message || 'Failed to update team')
+      } else {
+        toast.error('Failed to update team')
+      }
+    }
+  }
+
+  const handleDeleteTeam = async () => {
+    try {
+      const response = await api.delete('/team/delete')
+      if (response.data.success) {
+        toast.success('Team deleted successfully')
+        setTeam(null)
+        setShowDeleteTeamDialog(false)
+      }
+    } catch (error: unknown) {
+      console.error('Error deleting team:', error)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } }
+        toast.error(axiosError.response?.data?.message || 'Failed to delete team')
+      } else {
+        toast.error('Failed to delete team')
+      }
+    }
+  }
+
+  const handleTransferLeadership = async () => {
+    if (!selectedNewLeader) {
+      toast.error('Please select a new leader')
+      return
+    }
+
+    try {
+      const response = await api.post('/team/transfer-leadership', { newLeaderId: selectedNewLeader })
+      if (response.data.success) {
+        toast.success('Leadership transferred successfully')
+        await fetchTeamDetails()
+        setShowTransferLeadershipDialog(false)
+        setSelectedNewLeader('')
+      }
+    } catch (error: unknown) {
+      console.error('Error transferring leadership:', error)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } }
+        toast.error(axiosError.response?.data?.message || 'Failed to transfer leadership')
+      } else {
+        toast.error('Failed to transfer leadership')
+      }
     }
   }
 
@@ -439,26 +663,71 @@ export default function TeamPage() {
               <span className="text-xs sm:text-sm">Created {new Date(team.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
-            {isLeader && (
-              <Button variant="outline" size="sm" onClick={copyJoinLink} disabled={linkCopied} className="text-xs sm:text-sm">
-                {linkCopied ? (
-                  <>
-                    <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">Copied!</span>
-                    <span className="sm:hidden">✓</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">Share Join Link</span>
-                    <span className="sm:hidden">Share</span>
-                  </>
-                )}
-              </Button>
-            )}
-            {!isLeader && (
+          <div className="flex gap-2 flex-shrink-0 flex-wrap">
+            {isLeader ? (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    setNewTeamName(team.name)
+                    setShowUpdateTeamDialog(true)
+                  }}
+                  className="text-xs sm:text-sm"
+                >
+                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Edit Team</span>
+                  <span className="sm:hidden">Edit</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowTransferLeadershipDialog(true)}
+                  className="text-xs sm:text-sm"
+                >
+                  <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Transfer Leadership</span>
+                  <span className="sm:hidden">Transfer</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowLeaveDialog(true)} 
+                  className="text-xs sm:text-sm"
+                >
+                  <UserMinus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Leave Team</span>
+                  <span className="sm:hidden">Leave</span>
+                </Button>
+                <Button variant="outline" size="sm" onClick={copyJoinLink} disabled={linkCopied} className="text-xs sm:text-sm">
+                  {linkCopied ? (
+                    <>
+                      <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Copied!</span>
+                      <span className="sm:hidden">✓</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">Share Join Link</span>
+                      <span className="sm:hidden">Share</span>
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => setShowDeleteTeamDialog(true)} 
+                  className="text-xs sm:text-sm"
+                >
+                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Delete Team</span>
+                  <span className="sm:hidden">Delete</span>
+                </Button>
+              </>
+            ) : (
               <Button variant="destructive" size="sm" onClick={() => setShowLeaveDialog(true)} className="text-xs sm:text-sm">
+                <UserMinus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Leave Team</span>
                 <span className="sm:hidden">Leave</span>
               </Button>
@@ -566,49 +835,7 @@ export default function TeamPage() {
               ) : (
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
                   {teamProblems.map((problem) => (
-                    <Card key={problem._id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="p-4 md:p-6">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="text-xs">{problem.id}</Badge>
-                            <Badge className="text-xs">{problem.difficultyLevel}</Badge>
-                          </div>
-                          <Link href={`/problems/${problem.id}`}>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                        </div>
-                        
-                        <h3 className="font-semibold text-base md:text-lg mb-2 line-clamp-2">{problem.title}</h3>
-                        <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">{problem.summary}</p>
-                        
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <Badge variant="secondary" className="text-xs">{problem.category}</Badge>
-                          <Badge variant="secondary" className="text-xs">{problem.theme}</Badge>
-                        </div>
-
-                        <Separator className="my-3" />
-
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">Chosen by {problem.teamContext.chosenCount} member{problem.teamContext.chosenCount !== 1 ? 's' : ''}:</p>
-                          <div className="flex flex-wrap gap-2">
-                            {problem.teamContext.chosenBy.map((choice) => (
-                              <div key={choice.userId} className="flex items-center gap-2 text-xs bg-muted rounded-full px-3 py-1">
-                                <Avatar className="w-4 h-4">
-                                  <AvatarImage src={choice.userPhoto} />
-                                  <AvatarFallback className="text-xs">{choice.userName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <span className="truncate max-w-20">{choice.userName}</span>
-                                {problem.teamContext.isChosenByCurrentUser && choice.userId === user.firebaseUid && (
-                                  <span className="text-primary">(You)</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <ProblemCard key={problem._id} problem={problem} />
                   ))}
                 </div>
               )}
@@ -623,7 +850,25 @@ export default function TeamPage() {
           <DialogHeader>
             <DialogTitle>Leave Team</DialogTitle>
             <DialogDescription>
-              Are you sure you want to leave this team? This action cannot be undone.
+              {isCurrentUserLeader ? (
+                team && team.members.length > 1 ? (
+                  <>
+                    As team leader, leaving will automatically transfer leadership to the oldest team member. 
+                    The new leader will be <strong>{team.members.filter(m => m.role !== 'leader' && m._id !== currentUserId).sort((a, b) => 
+                      new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime())[0]?.name}</strong>.
+                    This action cannot be undone.
+                  </>
+                ) : (
+                  <>
+                    You are the only member of this team. Leaving will automatically delete the team. 
+                    This action cannot be undone.
+                  </>
+                )
+              ) : (
+                <>
+                  Are you sure you want to leave this team? This action cannot be undone.
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 justify-end">
@@ -631,7 +876,10 @@ export default function TeamPage() {
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleLeaveTeam}>
-              Leave Team
+              {isCurrentUserLeader ? 
+                (team && team.members.length > 1 ? 'Transfer Leadership & Leave' : 'Delete Team & Leave') 
+                : 'Leave Team'
+              }
             </Button>
           </div>
         </DialogContent>
@@ -655,6 +903,106 @@ export default function TeamPage() {
             </Button>
             <Button variant="destructive" onClick={confirmRemoveMember}>
               Remove Member
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Team Dialog */}
+      <Dialog open={showUpdateTeamDialog} onOpenChange={setShowUpdateTeamDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update Team Name</DialogTitle>
+            <DialogDescription>
+              Enter a new name for your team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="team-name">Team Name</Label>
+              <Input
+                id="team-name"
+                value={newTeamName}
+                onChange={(e) => setNewTeamName(e.target.value)}
+                placeholder="Enter team name..."
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => {
+              setShowUpdateTeamDialog(false)
+              setNewTeamName('')
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateTeam}>
+              Update Team
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Team Dialog */}
+      <Dialog open={showDeleteTeamDialog} onOpenChange={setShowDeleteTeamDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Team</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this team? This action cannot be undone and all team members will be removed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setShowDeleteTeamDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteTeam}>
+              Delete Team
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transfer Leadership Dialog */}
+      <Dialog open={showTransferLeadershipDialog} onOpenChange={setShowTransferLeadershipDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Transfer Leadership</DialogTitle>
+            <DialogDescription>
+              Select a team member to transfer leadership to. You will lose leader privileges after this action.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-leader">Select New Leader</Label>
+              <Select value={selectedNewLeader} onValueChange={setSelectedNewLeader}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a team member..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {team?.members?.filter(member => member.role !== 'leader').map((member) => (
+                    <SelectItem key={member._id} value={member._id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={member.photoURL} />
+                          <AvatarFallback className="text-xs">{member.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>{member.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => {
+              setShowTransferLeadershipDialog(false)
+              setSelectedNewLeader('')
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleTransferLeadership}>
+              Transfer Leadership
             </Button>
           </div>
         </DialogContent>
