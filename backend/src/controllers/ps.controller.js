@@ -326,7 +326,7 @@ const deleteBookMark = async (req, res) => {
 
     try {
         const deletedBookmark = await Bookmark.findOneAndUpdate(
-            { userId: mongoId, problemStatementId: psId },
+            { userId: mongoId, problemStatementId: psId , isDeleted: false },
             { isDeleted: true },
             { new: true }
         );
@@ -401,7 +401,7 @@ const deletePsFromTeam = async(req, res)=>{
 
     try {
         const deletedChoosenPs = await ChoosenPs.findOneAndUpdate(
-            { userId: mongoId, problemStatementId: psId },
+            { userId: mongoId, problemStatementId: psId ,isDeleted:false},
             { isDeleted: true },
             { new: true }
         );
