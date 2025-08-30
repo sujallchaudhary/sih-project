@@ -647,8 +647,8 @@ export default function TeamPage() {
   return (
     <div className="container mx-auto px-4 py-4 md:py-8">
       <div className="mb-6 md:mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="min-w-0">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
             <h1 className="text-2xl md:text-3xl font-bold mb-2 truncate">{team.name}</h1>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
@@ -663,70 +663,83 @@ export default function TeamPage() {
               <span className="text-xs sm:text-sm">Created {new Date(team.createdAt).toLocaleDateString()}</span>
             </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0 flex-wrap">
+          <div className="flex gap-1.5 sm:gap-2 flex-shrink-0 flex-wrap justify-end lg:justify-start">{/* Additional responsive improvements for very small screens */}
             {isLeader ? (
               <>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    setNewTeamName(team.name)
-                    setShowUpdateTeamDialog(true)
-                  }}
-                  className="text-xs sm:text-sm"
-                >
-                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Edit Team</span>
-                  <span className="sm:hidden">Edit</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowTransferLeadershipDialog(true)}
-                  className="text-xs sm:text-sm"
-                >
-                  <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Transfer Leadership</span>
-                  <span className="sm:hidden">Transfer</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowLeaveDialog(true)} 
-                  className="text-xs sm:text-sm"
-                >
-                  <UserMinus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Leave Team</span>
-                  <span className="sm:hidden">Leave</span>
-                </Button>
-                <Button variant="outline" size="sm" onClick={copyJoinLink} disabled={linkCopied} className="text-xs sm:text-sm">
-                  {linkCopied ? (
-                    <>
-                      <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Copied!</span>
-                      <span className="sm:hidden">✓</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">Share Join Link</span>
-                      <span className="sm:hidden">Share</span>
-                    </>
-                  )}
-                </Button>
-                <Button 
-                  variant="destructive" 
-                  size="sm" 
-                  onClick={() => setShowDeleteTeamDialog(true)} 
-                  className="text-xs sm:text-sm"
-                >
-                  <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Delete Team</span>
-                  <span className="sm:hidden">Delete</span>
-                </Button>
+                <div className="flex gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto justify-end">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setNewTeamName(team.name)
+                      setShowUpdateTeamDialog(true)
+                    }}
+                    className="text-xs sm:text-sm min-w-[50px] sm:min-w-[80px] flex-1 sm:flex-none max-w-[80px] sm:max-w-none"
+                  >
+                    <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Edit Team</span>
+                    <span className="sm:hidden">Edit</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowTransferLeadershipDialog(true)}
+                    className="text-xs sm:text-sm min-w-[70px] sm:min-w-[140px] flex-1 sm:flex-none max-w-[90px] sm:max-w-none"
+                  >
+                    <RotateCcw className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Transfer Leadership</span>
+                    <span className="sm:hidden">Transfer</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowLeaveDialog(true)} 
+                    className="text-xs sm:text-sm min-w-[50px] sm:min-w-[90px] flex-1 sm:flex-none max-w-[70px] sm:max-w-none"
+                  >
+                    <UserMinus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Leave Team</span>
+                    <span className="sm:hidden">Leave</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={copyJoinLink} 
+                    disabled={linkCopied} 
+                    className="text-xs sm:text-sm min-w-[50px] sm:min-w-[120px] flex-1 sm:flex-none max-w-[70px] sm:max-w-none"
+                  >
+                    {linkCopied ? (
+                      <>
+                        <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Copied!</span>
+                        <span className="sm:hidden">✓</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Share Join Link</span>
+                        <span className="sm:hidden">Share</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => setShowDeleteTeamDialog(true)} 
+                    className="text-xs sm:text-sm min-w-[50px] sm:min-w-[100px] flex-1 sm:flex-none max-w-[70px] sm:max-w-none"
+                  >
+                    <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Delete Team</span>
+                    <span className="sm:hidden">Delete</span>
+                  </Button>
+                </div>
               </>
             ) : (
-              <Button variant="destructive" size="sm" onClick={() => setShowLeaveDialog(true)} className="text-xs sm:text-sm">
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => setShowLeaveDialog(true)} 
+                className="text-xs sm:text-sm min-w-[60px] sm:min-w-[90px]"
+              >
                 <UserMinus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Leave Team</span>
                 <span className="sm:hidden">Leave</span>
