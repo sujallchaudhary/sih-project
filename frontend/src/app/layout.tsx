@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SIH Hub - Official Smart India Hackathon Problem Statements Platform | SIH 2025",
+  title: "SIH Hub | SIH 2025",
   description: "Discover SIH problem statements with detailed analysis, advanced search filters, and team collaboration tools. Your ultimate platform for Smart India Hackathon 2025 preparation and team formation.",
   keywords: [
     "SIH", 
