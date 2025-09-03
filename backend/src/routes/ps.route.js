@@ -11,17 +11,19 @@ const {
     getTeamProblemStatements,
     getBookmarkedProblemStatements
 } = require('../controllers/ps.controller');
-const {authenticateFirebaseToken, optionalAuthenticateFirebaseToken} = require('../middlewares/jwtAuth');
+const {authenticateJWT, optionalAuthenticateJWT} = require('../middlewares/jwtAuth');
 
-router.get('/', optionalAuthenticateFirebaseToken, getAllProblemStatements);
+// Public and optional auth routes
+router.get('/', optionalAuthenticateJWT, getAllProblemStatements);
 router.get('/filters', getFilterOptions);
-router.get('/bookmarked', authenticateFirebaseToken, getBookmarkedProblemStatements);
-router.get('/team', authenticateFirebaseToken, getTeamProblemStatements);
-router.get('/:id', optionalAuthenticateFirebaseToken, getProblemStatementById);
+router.get('/:id', optionalAuthenticateJWT, getProblemStatementById);
 
-router.post('/bookmark', authenticateFirebaseToken, bookMarkPS);
-router.delete('/bookmark', authenticateFirebaseToken, deleteBookMark);
-router.post('/team', authenticateFirebaseToken, addPsToTeam);
-router.delete('/team', authenticateFirebaseToken, deletePsFromTeam);
+// Protected routes requiring JWT authentication
+router.get('/bookmarked', authenticateJWT, getBookmarkedProblemStatements);
+router.get('/team', authenticateJWT, getTeamProblemStatements);
+router.post('/bookmark', authenticateJWT, bookMarkPS);
+router.delete('/bookmark', authenticateJWT, deleteBookMark);
+router.post('/team', authenticateJWT, addPsToTeam);
+router.delete('/team', authenticateJWT, deletePsFromTeam);
 
 module.exports = router;

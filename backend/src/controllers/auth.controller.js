@@ -62,6 +62,7 @@ const googleSignIn = async (req, res) => {
             });
 
             await user.save();
+            const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
             return res.status(201).json({
                 success: true,
@@ -75,7 +76,8 @@ const googleSignIn = async (req, res) => {
                         photoURL: user.photoURL,
                         createdAt: user.createdAt
                     },
-                    isNewUser: true
+                    isNewUser: true,
+                    token   
                 }
             });
         } else {
@@ -91,6 +93,7 @@ const googleSignIn = async (req, res) => {
             };
 
             await user.save();
+            const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
             return res.status(200).json({
                 success: true,
@@ -107,7 +110,8 @@ const googleSignIn = async (req, res) => {
                         lastLoginAt: user.lastLoginAt,
                         createdAt: user.createdAt
                     },
-                    isNewUser: false
+                    isNewUser: false,
+                    token
                 }
             });
         }
@@ -186,7 +190,41 @@ const getCurrentUser = async (req, res) => {
     }
 };
 
+// Refresh JWT token (optional endpoint for future use)
+const refreshToken = async (req, res) => {
+    try {
+        const user = req.user;
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: 'User not authenticated'
+            });
+        }
+
+        // Generate new JWT token
+        const newToken = jwt.sign({ userId: user.mongoId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+        res.status(200).json({
+            success: true,
+            message: 'Token refreshed successfully',
+            data: {
+                token: newToken
+            }
+        });
+
+    } catch (error) {
+        console.error('Token Refresh Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to refresh token',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     googleSignIn,
     getCurrentUser,
+    refreshToken,
 };

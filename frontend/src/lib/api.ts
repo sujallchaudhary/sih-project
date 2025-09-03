@@ -1,6 +1,5 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { auth } from './firebase';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -9,10 +8,10 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Add authentication header to requests if token is available
+// Add JWT token to requests
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = Cookies.get('idToken');
+    const token = Cookies.get('authToken'); // Use JWT token instead of Firebase token
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -20,7 +19,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Add response interceptor to handle token refresh
+// Add response interceptor to handle JWT token expiry
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -30,38 +29,14 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      try {
-        // Try to refresh the token
-        const firebaseUser = auth.currentUser;
-        if (firebaseUser) {
-          const newToken = await firebaseUser.getIdToken(true);
-          
-          // Update the cookie
-          Cookies.set('idToken', newToken, { 
-            expires: 1,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
-          });
-
-          // Update the original request with new token
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          
-          // Retry the original request
-          return api(originalRequest);
-        } else {
-          // No Firebase user, redirect to login
-          Cookies.remove('idToken');
-          if (typeof window !== 'undefined') {
-            window.location.href = '/';
-          }
-        }
-      } catch (refreshError) {
-        // Refresh failed, redirect to login
-        console.error('Token refresh failed:', refreshError);
-        Cookies.remove('idToken');
-        if (typeof window !== 'undefined') {
-          window.location.href = '/';
-        }
+      // For JWT tokens, we can't refresh them automatically
+      // User needs to sign in again
+      console.error('JWT token expired or invalid, redirecting to login');
+      Cookies.remove('authToken');
+      
+      if (typeof window !== 'undefined') {
+        // You might want to show a toast notification here
+        window.location.href = '/';
       }
     }
 

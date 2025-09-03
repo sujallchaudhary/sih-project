@@ -8,7 +8,7 @@ function getGoogleGemini() {
     };
     
     return new ChatGoogleGenerativeAI({
-        apiKey: process.env.GOOGLE_API_KEY,
+        apiKey: process.env.GOOGLE_GEMINI_API_KEY,
         model: config.model,
         });
 }

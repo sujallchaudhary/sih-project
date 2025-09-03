@@ -13,18 +13,19 @@ const {
     getTeamInfo
 } = require('../controllers/team.controller');
 
-const { authenticateFirebaseToken } = require('../middlewares/jwtAuth');
+const { authenticateJWT } = require('../middlewares/jwtAuth');
 
-router.post('/create', authenticateFirebaseToken, createTeam);
-router.put('/update', authenticateFirebaseToken, updateTeam);
-router.delete('/delete', authenticateFirebaseToken, deleteTeam);
+// All team routes require JWT authentication except public team info
+router.post('/create', authenticateJWT, createTeam);
+router.put('/update', authenticateJWT, updateTeam);
+router.delete('/delete', authenticateJWT, deleteTeam);
 
-router.post('/join', authenticateFirebaseToken, joinTeam);
-router.delete('/leave', authenticateFirebaseToken, leaveTeam);
-router.delete('/remove-user', authenticateFirebaseToken, removeUserFromTeam);
-router.post('/transfer-leadership', authenticateFirebaseToken, transferLeadership);
+router.post('/join', authenticateJWT, joinTeam);
+router.delete('/leave', authenticateJWT, leaveTeam);
+router.delete('/remove-user', authenticateJWT, removeUserFromTeam);
+router.post('/transfer-leadership', authenticateJWT, transferLeadership);
 
-router.get('/details', authenticateFirebaseToken, getTeamDetails);
+router.get('/details', authenticateJWT, getTeamDetails);
 router.get('/info/:teamId', getTeamInfo); // Public endpoint for basic team info
 
 module.exports = router;

@@ -24,6 +24,7 @@ export interface AuthResponse {
   data: {
     user: AuthUser;
     isNewUser: boolean;
+    token: string; // JWT token from backend
   };
 }
 
@@ -40,8 +41,8 @@ class AuthService {
   private refreshTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
-    // Set up automatic token refresh
-    this.setupTokenRefresh();
+    // Remove automatic Firebase token refresh since we're using JWT
+    // JWT tokens don't need frequent refresh like Firebase tokens
   }
 
   // Sign in with Google
@@ -50,22 +51,23 @@ class AuthService {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
       
-      // Get the ID token
+      // Get the Firebase ID token (only used for initial authentication)
       const idToken = await user.getIdToken();
       
-      // Store the ID token in cookies with shorter expiry
-      Cookies.set('idToken', idToken, { 
-        expires: 1, // 1 day instead of 7 days
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
-      
-      // Send ID token to backend
+      // Send Firebase ID token to backend to get JWT token
       const response = await axios.post<AuthResponse>(`${API_BASE_URL}/auth/signin`, {
         idToken
       });
       
       if (response.data.success) {
+        // Store the JWT token (not Firebase token) in cookies
+        const jwtToken = response.data.data.token;
+        Cookies.set('authToken', jwtToken, { 
+          expires: 7, // 7 days to match JWT expiry
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict'
+        });
+        
         this.currentUser = response.data.data.user;
         return this.currentUser;
       } else {
@@ -74,7 +76,7 @@ class AuthService {
     } catch (error) {
       console.error('Google sign-in error:', error);
       // Clean up on error
-      Cookies.remove('idToken');
+      Cookies.remove('authToken');
       throw error;
     }
   }
@@ -83,27 +85,27 @@ class AuthService {
   async signOut(): Promise<void> {
     try {
       await firebaseSignOut(auth);
-      Cookies.remove('idToken');
+      Cookies.remove('authToken'); // Remove JWT token
       this.currentUser = null;
-      this.clearTokenRefresh(); // Clear the refresh timer
+      this.clearTokenRefresh(); // Clear any refresh timers if they exist
     } catch (error) {
       console.error('Sign out error:', error);
       throw error;
     }
   }
 
-  // Get current user from backend
+  // Get current user from backend using JWT token
   async getCurrentUser(): Promise<AuthUser | null> {
     try {
-      const idToken = Cookies.get('idToken');
+      const authToken = Cookies.get('authToken');
       
-      if (!idToken) {
+      if (!authToken) {
         return null;
       }
 
       const response = await axios.get<CurrentUserResponse>(`${API_BASE_URL}/auth/me`, {
         headers: {
-          Authorization: `Bearer ${idToken}`
+          Authorization: `Bearer ${authToken}`
         }
       });
 
@@ -112,7 +114,7 @@ class AuthService {
         return this.currentUser;
       } else {
         // Token might be invalid, remove it
-        Cookies.remove('idToken');
+        Cookies.remove('authToken');
         return null;
       }
     } catch (error) {
@@ -120,7 +122,7 @@ class AuthService {
       
       // If token is invalid, remove it
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        Cookies.remove('idToken');
+        Cookies.remove('authToken');
       }
       
       return null;
@@ -129,7 +131,7 @@ class AuthService {
 
   // Check if user is authenticated
   isAuthenticated(): boolean {
-    return !!Cookies.get('idToken');
+    return !!Cookies.get('authToken');
   }
 
   // Get stored user data
@@ -137,90 +139,47 @@ class AuthService {
     return this.currentUser;
   }
 
-  // Listen to auth state changes
+  // Listen to auth state changes (simplified for JWT)
   onAuthStateChanged(callback: (user: AuthUser | null) => void): () => void {
+    // For JWT-based auth, we primarily rely on stored tokens
+    // Firebase auth state is only used for initial authentication
     return onAuthStateChanged(auth, async (firebaseUser: User | null) => {
-      if (firebaseUser) {
-        // Try to get user data from backend
+      if (firebaseUser && this.isAuthenticated()) {
+        // User has Firebase session and JWT token
         const user = await this.getCurrentUser();
         callback(user);
-      } else {
+      } else if (!firebaseUser) {
+        // No Firebase session, clear everything
         this.currentUser = null;
+        Cookies.remove('authToken');
+        callback(null);
+      } else {
+        // Firebase user exists but no JWT token - redirect to signin
         callback(null);
       }
     });
   }
 
-  // Refresh token if needed
-  async refreshToken(): Promise<string | null> {
-    try {
-      const firebaseUser = auth.currentUser;
-      if (firebaseUser) {
-        const idToken = await firebaseUser.getIdToken(true); // Force refresh
-        Cookies.set('idToken', idToken, { 
-          expires: 1, // 1 day - reasonable for web apps
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict'
-        });
-        return idToken;
-      }
-      return null;
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      return null;
-    }
-  }
-
-  // Setup automatic token refresh
-  private setupTokenRefresh(): void {
-    // Clear any existing timeout
-    if (this.refreshTimeout) {
-      clearTimeout(this.refreshTimeout);
-    }
-
-    // Set up token refresh every 50 minutes (before 1-hour expiry)
-    const refreshInterval = 50 * 60 * 1000; // 50 minutes in milliseconds
-    
-    this.refreshTimeout = setInterval(async () => {
-      if (auth.currentUser && this.isAuthenticated()) {
-        try {
-          await this.refreshToken();
-          console.log('Token refreshed automatically');
-        } catch (error) {
-          console.error('Automatic token refresh failed:', error);
-        }
-      }
-    }, refreshInterval);
-  }
-
-  // Clear token refresh
-  private clearTokenRefresh(): void {
-    if (this.refreshTimeout) {
-      clearInterval(this.refreshTimeout);
-      this.refreshTimeout = null;
-    }
-  }
-
-  // Enhanced getCurrentUser with token refresh on 401
+  // Enhanced getCurrentUser with better error handling
   async getCurrentUserWithRetry(): Promise<AuthUser | null> {
     try {
       return await this.getCurrentUser();
     } catch (error) {
-      // If we get a 401, try refreshing the token once
+      // For JWT tokens, if auth fails, user needs to sign in again
       if (axios.isAxiosError(error) && error.response?.status === 401) {
-        try {
-          const newToken = await this.refreshToken();
-          if (newToken) {
-            // Retry the request with the new token
-            return await this.getCurrentUser();
-          }
-        } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
-          // Force sign out if refresh fails
-          await this.signOut();
-        }
+        console.error('JWT token invalid, user needs to sign in again');
+        await this.signOut();
+        return null;
       }
       throw error;
+    }
+  }
+
+  // Clear any refresh timers (kept for compatibility)
+  private clearTokenRefresh(): void {
+    if (this.refreshTimeout) {
+      clearInterval(this.refreshTimeout);
+      this.refreshTimeout = null;
     }
   }
 }
