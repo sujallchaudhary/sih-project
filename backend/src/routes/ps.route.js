@@ -13,17 +13,15 @@ const {
 } = require('../controllers/ps.controller');
 const {authenticateJWT, optionalAuthenticateJWT} = require('../middlewares/jwtAuth');
 
-// Public and optional auth routes
 router.get('/', optionalAuthenticateJWT, getAllProblemStatements);
 router.get('/filters', getFilterOptions);
-router.get('/:id', optionalAuthenticateJWT, getProblemStatementById);
 
-// Protected routes requiring JWT authentication
 router.get('/bookmarked', authenticateJWT, getBookmarkedProblemStatements);
 router.get('/team', authenticateJWT, getTeamProblemStatements);
 router.post('/bookmark', authenticateJWT, bookMarkPS);
 router.delete('/bookmark', authenticateJWT, deleteBookMark);
 router.post('/team', authenticateJWT, addPsToTeam);
 router.delete('/team', authenticateJWT, deletePsFromTeam);
+router.get('/:id', optionalAuthenticateJWT, getProblemStatementById);
 
 module.exports = router;
