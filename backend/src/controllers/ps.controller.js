@@ -90,7 +90,6 @@ const getAllProblemStatements = async (req, res) => {
             sortOptions[sortField] = sortOrder;
             sortOptions._id = sortOrder;
         } else {
-            sortOptions.createdAt = -1;
             sortOptions._id = -1;
         }
 
