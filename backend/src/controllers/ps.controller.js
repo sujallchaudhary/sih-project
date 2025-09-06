@@ -90,7 +90,7 @@ const getAllProblemStatements = async (req, res) => {
             sortOptions[sortField] = sortOrder;
             sortOptions._id = sortOrder;
         } else {
-            sortOptions._id = -1;
+            sortOptions.id = 1;
         }
 
         // Execute query with pagination
@@ -505,7 +505,9 @@ const getTeamProblemStatements = async (req, res) => {
             filter.$or = [
                 { title: { $regex: req.query.search, $options: 'i' } },
                 { description: { $regex: req.query.search, $options: 'i' } },
-                { summary: { $regex: req.query.search, $options: 'i' } }
+                { summary: { $regex: req.query.search, $options: 'i' } },
+                { id: { $regex: req.query.search, $options: 'i' } },
+
             ];
         }
 
